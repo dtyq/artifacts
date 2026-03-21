@@ -1,0 +1,62 @@
+ingress:
+  enabled: false
+  annotations: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  nodePort: null
+
+proxy:
+  apiBasePath: "/_/magic-service"
+  socketBasePath: "/_/magic-service"
+  webBaseURL: "http://localhost:38080"
+
+url:
+  serviceBaseUrl: ""
+  socketBaseUrl: ""
+  webBaseUrl: ""
+
+image:
+  registry: ""
+  repository: dtyq/magic-web
+  tag: "master"
+  pullPolicy: Always
+
+replicaCount: 1
+
+resources: {}
+resourcesPreset: "small"
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+customLivenessProbe: {}
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+customReadinessProbe: {}
+
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 30
+customStartupProbe: {}

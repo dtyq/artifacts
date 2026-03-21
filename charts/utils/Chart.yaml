@@ -1,0 +1,14 @@
+apiVersion: v2
+name: utils
+description: Shared Helm utility library for Magic charts
+type: library
+version: 0.0.1
+
+dependencies:
+  - name: common
+    version: "2.x.x"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"

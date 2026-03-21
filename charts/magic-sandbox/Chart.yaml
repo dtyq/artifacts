@@ -1,0 +1,31 @@
+apiVersion: v2
+name: magic-sandbox
+description: A Helm chart for magic-sandbox platform with gateway components
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+keywords:
+  - magic
+  - sandbox
+  - gateway
+
+dependencies:
+  - name: utils
+    version: "0.0.1"
+    repository: "file://../utils"
+  - name: magic-gateway
+    version: 0.0.1
+    repository: "file://./charts/magic-gateway"
+    condition: magic-gateway.enabled
+  - name: sandbox-gateway
+    version: 0.0.1
+    repository: "file://./charts/sandbox-gateway"
+    condition: sandbox-gateway.enabled
+  - name: super-magic
+    version: 0.0.1
+    repository: "file://./charts/super-magic"
+    condition: super-magic.enabled
+
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"

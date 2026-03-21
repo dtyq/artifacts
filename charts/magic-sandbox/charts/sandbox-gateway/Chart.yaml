@@ -1,0 +1,14 @@
+apiVersion: v2
+name: sandbox-gateway
+description: Sandbox Gateway - Container orchestration and management gateway
+type: application
+version: 0.0.1
+appVersion: "0.0.20"
+keywords:
+  - sandbox
+  - gateway
+  - orchestration
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"
+

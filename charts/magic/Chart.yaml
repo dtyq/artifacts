@@ -1,0 +1,29 @@
+apiVersion: v2
+name: magic
+description: A Helm chart for magic platform with web and service components
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+
+dependencies:
+  - name: utils
+    version: "0.0.1"
+    repository: "file://../utils"
+
+  - name: magic-service
+    version: "0.0.1"
+    repository: "file://./charts/magic-service"
+    tags:
+      - magic
+      - magic-service
+
+  - name: magic-web
+    version: "0.0.1"
+    repository: "file://./charts/magic-web"
+    tags:
+      - magic
+      - magic-web
+
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"

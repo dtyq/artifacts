@@ -1,0 +1,192 @@
+image:
+  registry: ""
+  repository: dtyq/magic-service
+  tag: "master"
+  pullPolicy: Always
+
+replicaCount: 1
+
+resources: {}
+resourcesPreset: "small"
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 9501
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+customLivenessProbe: {}
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 9501
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+customReadinessProbe: {}
+
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /heartbeat
+    port: 9501
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 30
+customStartupProbe: {}
+
+ingress:
+  enabled: false
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+
+magicEnvId: "10000"
+
+appName: "magic-service"
+appEnv: "prod"
+# Used by super-magic callback URL generation (super-magic.sandbox.callback_host).
+# Leave empty to auto-generate in-cluster service address:
+#   http://<release-name>.<namespace>.svc:9501
+appHost: ""
+appId: ""
+appSecret: ""
+appCode: ""
+
+redis:
+  db: "0"
+
+amqp:
+  vhost: "magic"
+
+mysql:
+  database: "magic"
+
+whitelist:
+  organization: {}
+  super: {}
+
+sandboxGateway: ""
+sandboxMessageMode: "consume"
+sandboxToken: ""
+
+shareEncryptKey: ""
+shareEncryptIv: ""
+
+modelGateway:
+  apiKey: ""
+  baseUrl: ""
+
+asr:
+  platform: ""
+  vke:
+    appId: ""
+    cluster: ""
+    token: ""
+    hotwordsConfig: ""
+    replacementWordsConfig: ""
+
+tts:
+  platform: ""
+
+qdrant:
+  uri: ""
+  apiKey: ""
+
+bingSearch:
+  apiKey: ""
+  endpoint: ""
+
+skylark:
+  apiKey: ""
+
+stripe:
+  config: ""
+
+openPlatform:
+  encryptKey: ""
+
+externalConfigMaps:
+  redis: "redis"
+  amqp: "amqp"
+  database: "database"
+  fileDriver: "file-driver"
+
+externalSecrets:
+  redis: "redis"
+  amqp: "amqp"
+  database: "database"
+  fileDriver: "file-driver"
+
+fileDriver:
+  driver: "minio"    # minio | local | tos | oss
+
+  # minio driver (default)
+  minio:
+    endpoint: "localhost:9010"
+    internalEndpoint: ""
+    region: "cn-north-1"
+    stsEndpoint: ""
+    private:
+      accessKey: ""
+      secretKey: ""
+      bucket: "magic"
+      roleArn: ""
+    public:
+      accessKey: ""
+      secretKey: ""
+      bucket: "magic-public"
+      publicRead: "true"
+      roleArn: ""
+    sandbox:
+      accessKey: ""
+      secretKey: ""
+      bucket: "magic-sandbox"
+      roleArn: ""
+
+  # local:
+  #   root: ""
+  #   readHost: ""
+  #   writeHost: ""
+
+  # tos driver — uncomment to configure
+  # tos:
+  #   private:
+  #     region: ""
+  #     endpoint: ""
+  #     accessKey: ""
+  #     secretKey: ""
+  #     bucket: ""
+  #     trn: ""
+  #   public:
+  #     region: ""
+  #     endpoint: ""
+  #     accessKey: ""
+  #     secretKey: ""
+  #     bucket: ""
+  #     trn: ""
+  #     publicRead: "true"
+
+  # oss driver — uncomment to configure
+  # oss:
+  #   private:
+  #     accessKey: ""
+  #     secretKey: ""
+  #     bucket: ""
+  #     endpoint: ""
+  #     roleArn: ""
+  #   public:
+  #     accessKey: ""
+  #     secretKey: ""
+  #     bucket: ""
+  #     endpoint: ""
+  #     roleArn: ""
+  #     publicRead: "true"

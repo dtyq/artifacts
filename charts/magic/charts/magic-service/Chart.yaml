@@ -1,0 +1,10 @@
+apiVersion: v2
+name: magic-service
+description: Magic Service
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"

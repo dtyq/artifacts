@@ -1,0 +1,14 @@
+apiVersion: v2
+name: magic-gateway
+description: Magic Gateway - API gateway for AI services
+type: application
+version: 0.0.1
+appVersion: "0.0.7"
+keywords:
+  - magic
+  - gateway
+  - api
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"
+

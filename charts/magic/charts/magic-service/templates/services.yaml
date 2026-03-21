@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  name: {{ include "common.names.name" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+spec:
+  ports:
+  - name: http
+    port: 9501
+    protocol: TCP
+    targetPort: 9501
+  - name: websocket
+    port: 9502
+    protocol: TCP
+    targetPort: 9502
+  selector:
+    {{- include "magic-service.selectorLabels" . | nindent 4 }}
+  type: ClusterIP

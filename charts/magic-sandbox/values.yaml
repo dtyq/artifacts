@@ -1,0 +1,48 @@
+namespace: "magic-sandbox"
+
+magic-gateway:
+  enabled: true
+  image:
+    registry: ""
+    repository: dtyq/magic-gateway
+    tag: "master"
+    pullPolicy: Always
+  replicaCount: 1
+  fullnameOverride: "magic-gateway"
+
+sandbox-gateway:
+  enabled: true
+  image:
+    registry: ""
+    repository: dtyq/sandbox-components
+    tag: "master"
+    pullPolicy: Always
+  replicaCount: 1
+  fullnameOverride: "sandbox-gateway"
+
+  ingress:
+    enabled: false
+    className: nginx
+    hosts:
+      - host: sandbox-gateway.magic.local
+        paths:
+          - path: /
+            pathType: Prefix
+
+  agent:
+    image:
+      registry: ""
+      repository: dtyq/super-magic
+      tag: "master"
+    port: "8002"
+
+  playwright:
+    image:
+      repository: dtyq/playwright-mod
+      tag: "master"
+
+  fuse:
+    image:
+      registry: ""
+      repository: dtyq/s3fs-fuse-mod
+      tag: "master"

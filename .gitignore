@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Local Helm repo output (.tgz + index.yaml), e.g. from a local packaging script
+dist/
+
+# Helm dependency archives (from helm dependency update/build)
+# Subcharts referenced via file:// are generated locally and should not be committed
+**/*.tgz
+
+# Helm lock files (top-level charts now live under ./charts)
+charts/*/Chart.lock
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.bak
+*.tmp
+*~

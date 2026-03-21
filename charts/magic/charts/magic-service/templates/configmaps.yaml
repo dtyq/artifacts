@@ -1,0 +1,118 @@
+{{- $redis := .Values.redis | default dict }}
+{{- $amqp := .Values.amqp | default dict }}
+{{- $mysql := .Values.mysql | default dict }}
+{{- $whitelist := .Values.whitelist | default dict }}
+{{- $modelGateway := .Values.modelGateway | default dict }}
+{{- $fd := .Values.fileDriver | default dict }}
+{{- $global := .Values.global | default dict }}
+{{- $officialOrganization := $global.officialOrganization | default dict }}
+{{- $oss := .Values.oss | default dict }}
+{{- $asr := .Values.asr | default dict }}
+{{- $tts := .Values.tts | default dict }}
+{{- $qdrant := .Values.qdrant | default dict }}
+{{- $serviceName := include "common.names.name" . }}
+{{- $serviceNamespace := include "common.names.namespace" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.name" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+data:
+  APP_NAME: {{ .Values.appName | default "magic-service" | quote }}
+  APP_ENV: {{ .Values.appEnv | default "prod" | quote }}
+  APP_HOST: {{ .Values.appHost | default (printf "http://%s.%s:9501" $serviceName $serviceNamespace) | quote }}
+  APP_WS_HOST: {{ .Values.appWsHost | default (printf "ws://%s.%s:9502" $serviceName $serviceNamespace) | quote }}
+  MAGIC_ENV_ID: {{ .Values.magicEnvId | default "10000" | quote }}
+  IS_PRIVATE_DEPLOY: {{ .Values.isPrivateDeploy | default "true" | quote }}
+  SEARCH_BACKEND: {{ .Values.searchBackend | default "BING" | quote }}
+  CODE_WHITE_ACCOUNT_ID: {{ .Values.codeWhiteAccountId | default "" | quote }}
+  DEPLOYMENT_ID: {{ $global.deploymentId | default "" | quote }}
+  REDIS_DB: {{ $redis.db | default "0" | quote }}
+  AMQP_VHOST: {{ $amqp.vhost | default "magic" | quote }}
+  DB_DATABASE: {{ $mysql.database | default "magic" | quote }}
+  CHECK_TASK_CRONTAB_ENABLED: {{ .Values.checkTaskCrontabEnabled | default "true" | quote }}
+  ASR_DEFAULT_PLATFORM: {{ $asr.platform | default "" | quote }}
+  {{- with $asr.vke }}
+  ASR_VKE_HOTWORDS_CONFIG: {{ .hotwordsConfig | default "" | quote }}
+  ASR_VKE_REPLACEMENT_WORDS_CONFIG: {{ .replacementWordsConfig | default "" | quote }}
+  {{- end }}
+  ORGANIZATION_WHITELISTS: {{ $whitelist.organization | default dict | toJson | quote }}
+  SUPER_WHITELISTS: {{ $whitelist.super | default (dict) | toJson | quote }}
+  SANDBOX_GATEWAY: {{ .Values.sandboxGateway | default "http://sandbox-gateway.magic-sandbox.svc" | quote }}
+  SANDBOX_MESSAGE_MODE: {{ .Values.sandboxMessageMode | default "consume" | quote }}
+  SUPER_MAGIC_MESSAGE_ENABLE_COMPENSATE: {{ .Values.superMagicMessageEnableCompensate | default "false" | quote }}
+  USER_MESSAGE_QUEUE_ENABLED: {{ .Values.userMessageQueueEnabled | default "true" | quote }}
+  USER_MESSAGE_QUEUE_WHITELIST: {{ .Values.userMessageQueueWhitelist | default "" | quote }}
+  ODIN_QDRANT_BASE_URI: {{ $qdrant.uri | default "" | quote }}
+  TTS_DEFAULT_PLATFORM: {{ $tts.platform | default "" | quote }}
+  OFFICE_ORGANIZATION: {{ .Values.officialOrganization | default $officialOrganization.code | default "test001" | quote }}
+  MAGIC_SERVICE_API_KEY: {{ $modelGateway.apiKey | default "" | quote }}
+  MAGIC_SERVICE_BASE_URL: {{ $modelGateway.baseUrl | default "" | quote }}
+  SSRF_REQUIRE_PUBLIC_IP: {{ .Values.ssrfRequirePublicIp | default "false" | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-driver
+  namespace: {{ include "common.names.namespace" . | quote }}
+data:
+  FILE_DRIVER: {{ $fd.driver | default "minio" | quote }}
+  {{- with $fd.local | default dict }}
+  FILE_LOCAL_ROOT: {{ .root | default "" | quote }}
+  FILE_LOCAL_READ_HOST: {{ .readHost | default "http://magic-service:9501" | quote }}
+  FILE_LOCAL_WRITE_HOST: {{ .writeHost | default "http://magic-service:9501" | quote }}
+  {{- end }}
+  {{- with $fd.minio | default dict }}
+  FILE_MINIO_ENDPOINT: {{ .endpoint | default "localhost:9010" | quote }}
+  FILE_MINIO_INTERNAL_ENDPOINT: {{ .internalEndpoint | default "minio.infra.svc:9000" | quote }}
+  FILE_MINIO_REGION: {{ .region | default "us-east-1" | quote }}
+  FILE_MINIO_STS_ENDPOINT: {{ .stsEndpoint | default "" | quote }}
+  {{- with .private | default dict }}
+  FILE_PRIVATE_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
+  FILE_PRIVATE_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
+  FILE_PRIVATE_MINIO_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PRIVATE_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
+  {{- end }}
+  {{- with .public | default dict }}
+  FILE_PUBLIC_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
+  FILE_PUBLIC_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
+  FILE_PUBLIC_MINIO_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PUBLIC_MINIO_PUBLIC_READ: {{ .publicRead | default "true" | quote }}
+  FILE_PUBLIC_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
+  {{- end }}
+  {{- with .sandbox | default dict }}
+  FILE_SANDBOX_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
+  FILE_SANDBOX_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
+  FILE_SANDBOX_MINIO_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_SANDBOX_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
+  {{- end }}
+  {{- end }}
+  {{- with $fd.tos | default dict }}
+  {{- with .private | default dict }}
+  FILE_PRIVATE_TOS_REGION: {{ .region | default "" | quote }}
+  FILE_PRIVATE_TOS_ENDPOINT: {{ .endpoint | default "" | quote }}
+  FILE_PRIVATE_TOS_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PRIVATE_TOS_TRN: {{ .trn | default "" | quote }}
+  {{- end }}
+  {{- with .public | default dict }}
+  FILE_PUBLIC_TOS_REGION: {{ .region | default "" | quote }}
+  FILE_PUBLIC_TOS_ENDPOINT: {{ .endpoint | default "" | quote }}
+  FILE_PUBLIC_TOS_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PUBLIC_TOS_TRN: {{ .trn | default "" | quote }}
+  FILE_PUBLIC_TOS_PUBLIC_READ: {{ .publicRead | default "true" | quote }}
+  {{- end }}
+  {{- end }}
+  {{- with $fd.oss | default dict }}
+  {{- with .private | default dict }}
+  FILE_PRIVATE_ALIYUN_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PRIVATE_ALIYUN_ENDPOINT: {{ .endpoint | default "" | quote }}
+  FILE_PRIVATE_ALIYUN_ROLE_ARN: {{ .roleArn | default "" | quote }}
+  {{- end }}
+  {{- with .public | default dict }}
+  FILE_PUBLIC_ALIYUN_BUCKET: {{ .bucket | default "" | quote }}
+  FILE_PUBLIC_ALIYUN_ENDPOINT: {{ .endpoint | default "" | quote }}
+  FILE_PUBLIC_ALIYUN_ROLE_ARN: {{ .roleArn | default "" | quote }}
+  FILE_PUBLIC_ALIYUN_PUBLIC_READ: {{ .publicRead | default "true" | quote }}
+  {{- end }}
+  {{- end }}
+---

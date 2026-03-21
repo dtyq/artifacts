@@ -1,0 +1,27 @@
+Magic Sandbox installed successfully.
+
+Deployed at: {{ now | date "2006-01-02 15:04:05" }}
+Chart version: {{ .Chart.Version }}
+App version: {{ .Chart.AppVersion }}
+Namespace: {{ .Release.Namespace }}
+
+Endpoints:
+- Magic Gateway: http://magic-gateway.{{ .Release.Namespace }}.svc
+- Sandbox Gateway: http://sandbox-gateway.{{ .Release.Namespace }}.svc
+{{- $sandboxGateway := index .Values "sandbox-gateway" | default dict }}
+{{- $sandboxIngress := index $sandboxGateway "ingress" | default dict }}
+{{- $sandboxHosts := index $sandboxIngress "hosts" | default (list) }}
+{{- if and (index $sandboxIngress "enabled") (gt (len $sandboxHosts) 0) }}
+- External URL: http://{{ (index $sandboxHosts 0).host }}
+{{- end }}
+
+Next steps:
+1. Configure valid API keys in values or secrets.
+2. Verify Ingress hostnames match your DNS / TLS setup.
+3. Confirm object storage (S3-compatible) settings.
+
+Check pods:
+  kubectl get pods -n {{ .Release.Namespace }}
+
+Check services:
+  kubectl get svc -n {{ .Release.Namespace }}

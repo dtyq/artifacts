@@ -1,0 +1,57 @@
+name: CI
+
+permissions: {}
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.1.3
+
+      - name: Cache Helm repository index
+        uses: actions/cache@v4
+        id: helm-repo-cache
+        with:
+          path: |
+            ~/.cache/helm
+            ~/.config/helm
+          key: helm-repo-${{ runner.os }}-${{ hashFiles('charts/**/Chart.yaml', 'charts/**/Chart.lock', '.github/linters/ct.yaml') }}
+          restore-keys: |
+            helm-repo-${{ runner.os }}-
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.8.0
+        with:
+          version: v3.14.0
+
+      - name: Configure Helm chart repos
+        env:
+          CACHE_HIT: ${{ steps.helm-repo-cache.outputs.cache-hit }}
+        run: |
+          if [ "$CACHE_HIT" != "true" ]; then
+            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+            helm repo update
+          fi
+
+      - name: Run chart-testing (lint)
+        run: ct lint --config .github/linters/ct.yaml

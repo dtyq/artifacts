@@ -1,0 +1,49 @@
+# Default values for sandbox-gateway
+replicaCount: 1
+
+image:
+  registry: ""
+  repository: dtyq/sandbox-components
+  tag: "master"
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: false
+
+resources: {}
+resourcesPreset: "small"
+
+# Service Account for K8s API access
+serviceAccount:
+  create: true
+  annotations: {}
+  name: sandbox-components
+
+# RBAC configuration
+rbac:
+  create: true
+
+# Agent (super-magic) container image
+agent:
+  image:
+    registry: ""
+    repository: dtyq/super-magic
+    tag: "master"
+  port: "8002"
+
+# Fuse (s3fs) sidecar image
+fuse:
+  image:
+    registry: ""
+    repository: dtyq/s3fs-fuse-mod
+    tag: "master"
+  extraOptions: "-o use_path_request_style"
+

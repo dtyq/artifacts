@@ -1,0 +1,72 @@
+{{- /*
+  infra/values.tmpl — dynamic Helm values overlay rendered by the CLI InfraRegistry.
+  Template data type: infraTemplateData (see cli/deployer/infra_registry.go).
+  Custom functions: quote (YAML-safe double-quote), escapeSQ (SQL single-quote escape).
+  This file is rendered per-deployment; credentials are never committed to source control.
+*/ -}}
+mysql:
+  auth:
+    rootPassword: {{ .MySQL.RootPassword | quote }}
+  initdbScripts:
+    init.sql: |
+{{ .MySQL.InitSQL }}
+
+redis:
+  auth:
+    password: {{ .Redis.AdminPassword | quote }}
+  commonConfiguration: |-
+    databases 200
+    appendonly yes
+    appendfsync everysec
+    no-appendfsync-on-rewrite yes
+    auto-aof-rewrite-percentage 50
+    auto-aof-rewrite-min-size 64mb
+    aof-use-rdb-preamble yes
+    save ""
+    {{- range .Redis.Users }}
+    user {{ .Username }} on >{{ .Password }} {{ .ACLRules }}
+    {{- end }}
+
+rabbitmq:
+  auth:
+    password: {{ .RabbitMQ.AdminPassword | quote }}
+  extraSecrets:
+    load-definition:
+      load_definition.json: {{ .RabbitMQ.LoadDefinitionJSON | quote }}
+  loadDefinition:
+    enabled: true
+    existingSecret: load-definition
+  extraConfiguration: |
+    load_definitions = /app/load_definition.json
+
+minio:
+  auth:
+    rootPassword: {{ .MinIO.RootPassword | quote }}
+  provisioning:
+    buckets:
+      {{- range .MinIO.Buckets }}
+      - name: {{ .Name | quote }}
+        region: {{ .Region | quote }}
+        versioning: {{ .Versioning | quote }}
+        withLock: {{ .WithLock }}
+        tags:
+          app: {{ index .Tags "app" | quote }}
+          type: {{ index .Tags "type" | quote }}
+      {{- end }}
+    extraCommands:
+      {{- range .MinIO.Buckets }}
+      {{- if eq (index .Tags "type") "public" }}
+      - {{ printf "mc anonymous set download provisioning/%s" .Name | quote }}
+      {{- end }}
+      {{- end }}
+    users:
+      {{- range .MinIO.Users }}
+      - username: {{ .Username | quote }}
+        password: {{ .Password | quote }}
+        disabled: false
+        policies:
+          {{- range .Policies }}
+          - {{ . | quote }}
+          {{- end }}
+        setPolicies: true
+      {{- end }}

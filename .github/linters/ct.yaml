@@ -1,0 +1,15 @@
+# https://github.com/helm/chart-testing#configuration
+# Top-level charts are under ./charts (same as charts-dir: charts in .cr.yaml)
+chart-dirs:
+  - charts
+chart-repos:
+  - bitnami=https://charts.bitnami.com/bitnami
+  - ingress-nginx=https://kubernetes.github.io/ingress-nginx
+remote: origin
+target-branch: master
+use-helmignore: true
+validate-maintainers: false
+helm-extra-args: --timeout 600s
+# Rely on one helm repo update in CI (cached); avoid per-chart refresh during dependency build.
+helm-dependency-extra-args:
+  - --skip-refresh

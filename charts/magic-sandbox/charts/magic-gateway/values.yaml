@@ -1,0 +1,93 @@
+# Default values for magic-gateway
+replicaCount: 3
+
+image:
+  registry: ""
+  repository: dtyq/magic-gateway
+  tag: "master"
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+resources: {}
+resourcesPreset: "small"
+
+# Gateway settings
+gateway:
+  port: "80"
+  debug: "false"
+  apiKey: ""
+  allowedTargetIp: "172.22.224.0/24"
+
+# Magic Service
+magicService:
+  baseUrl: "http://magic-service.magic.svc:9501"
+  apiKey: ""
+
+# AI Model Services
+openai:
+  apiBaseUrl: ""
+  apiKey: ""
+
+claude:
+  apiBaseUrl: ""
+  apiKey: ""
+
+claudeCache:
+  apiBaseUrl: ""
+  apiKey: ""
+
+deepseek:
+  apiBaseUrl: ""
+  apiKey: ""
+
+doubao:
+  apiBaseUrl: ""
+  apiKey: ""
+
+qwen:
+  apiBaseUrl: ""
+  apiKey: ""
+
+gemini:
+  apiBaseUrl: ""
+  apiKey: ""
+
+# Image and Voice Services
+imageGenerator:
+  apiUrl: ""
+  apiKey: ""
+
+textToImage:
+  platform: "magic-service"
+  apiBaseUrl: ""
+  accessKey: ""
+
+voiceUnderstanding:
+  apiBaseUrl: ""
+  apiKey: ""
+
+# Third-party Services
+bing:
+  subscriptionEndpoint: ""
+  subscriptionKey: ""
+
+serpapi:
+  apiEndpoint: ""
+  apiKey: ""
+
+metaso:
+  apiEndpoint: ""
+  apiKey: ""
+
+amap:
+  apiKey: ""
+
+tikhub:
+  apiKey: ""

@@ -1,0 +1,96 @@
+{{- $gateway := .Values.gateway | default dict -}}
+{{- $ing := $gateway.ingress | default dict -}}
+{{- $web := $ing.web | default dict -}}
+{{- $api := $ing.api | default dict -}}
+{{- $socket := $ing.socket | default dict -}}
+{{- if $ing.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: magic-gateway-web
+  namespace: {{ .Values.namespace | default .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: magic-gateway
+    app.kubernetes.io/part-of: magic
+  {{- if or $ing.annotations (index $web "annotations") }}
+  annotations:
+    {{- with $ing.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (index $web "annotations") }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $ing.className | default "nginx" }}
+  rules:
+  - http:
+      paths:
+      - path: {{ (index $web "path") | default "/" }}
+        pathType: {{ (index $web "pathType") | default ($ing.pathType | default "Prefix") }}
+        backend:
+          service:
+            name: magic-web
+            port:
+              name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: magic-gateway-api
+  namespace: {{ .Values.namespace | default .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: magic-gateway
+    app.kubernetes.io/part-of: magic
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: {{ (index $api "useRegex") | default true | quote }}
+    nginx.ingress.kubernetes.io/rewrite-target: {{ (index $api "rewriteTarget") | default "/$1" | quote }}
+    {{- with $ing.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (index $api "annotations") }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ing.className | default "nginx" }}
+  rules:
+  - http:
+      paths:
+      - path: {{ printf "%s/?(.*)" ((index $api "pathPrefix") | default ($ing.apiPathPrefix | default "/_/magic-service")) }}
+        pathType: {{ (index $api "pathType") | default "ImplementationSpecific" }}
+        backend:
+          service:
+            name: magic-service
+            port:
+              name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: magic-gateway-socket
+  namespace: {{ .Values.namespace | default .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: magic-gateway
+    app.kubernetes.io/part-of: magic
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: {{ (index $socket "useRegex") | default true | quote }}
+    nginx.ingress.kubernetes.io/rewrite-target: {{ (index $socket "rewriteTarget") | default "/socket.io/$1" | quote }}
+    {{- with $ing.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (index $socket "annotations") }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ing.className | default "nginx" }}
+  rules:
+  - http:
+      paths:
+      - path: {{ printf "%s/?(.*)" ((index $socket "pathPrefix") | default ($ing.socketPathPrefix | default "/_/magic-service/socket.io")) }}
+        pathType: {{ (index $socket "pathType") | default "ImplementationSpecific" }}
+        backend:
+          service:
+            name: magic-service
+            port:
+              name: websocket
+{{- end }}

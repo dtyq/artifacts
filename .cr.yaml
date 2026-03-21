@@ -1,0 +1,11 @@
+# Helm chart-releaser: https://github.com/helm/chart-releaser
+# charts-repo-url: base URL embedded in index.yaml for chart downloads.
+
+owner: dtyq
+git-repo: artifacts
+
+# Published charts are under ./charts/<name>
+charts-dir: charts
+
+# Skip if the same chart version already exists in the release (prometheus-helm-charts pattern)
+skip-existing: true

@@ -1,0 +1,46 @@
+{{- $mysql := .Values.mysql | default dict }}
+{{- $redis := .Values.redis | default dict }}
+{{- $amqp := .Values.amqp | default dict }}
+{{- $opentracing := .Values.opentracing | default dict }}
+---
+apiVersion: v1
+data:
+  DB_HOST: {{ $mysql.host | default "" | quote }}
+  DB_PORT: {{ $mysql.port | default "3306" | quote }}
+  DB_SQL_MODE: {{ $mysql.sqlMode | default "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION" | quote }}
+kind: ConfigMap
+metadata:
+  name: database
+  namespace: {{ include "common.names.namespace" . | quote }}
+---
+apiVersion: v1
+data:
+  REDIS_HOST: {{ $redis.host | default "" | quote }}
+  REDIS_PORT: {{ $redis.port | default "6379" | quote }}
+kind: ConfigMap
+metadata:
+  name: redis
+  namespace: {{ include "common.names.namespace" . | quote }}
+---
+apiVersion: v1
+data:
+  AMQP_HOST: {{ $amqp.host | default "" | quote }}
+  AMQP_PORT: {{ $amqp.port | default "5672" | quote }}
+kind: ConfigMap
+metadata:
+  name: amqp
+  namespace: {{ include "common.names.namespace" . | quote }}
+---
+apiVersion: v1
+data:
+  TRACER_ENABLE_DB: {{ $opentracing.enableDb | default "false" | quote }}
+  TRACER_ENABLE_GUZZLE: {{ $opentracing.enableGuzzle | default "false" | quote }}
+  TRACER_ENABLE_METHOD: {{ $opentracing.enableMethod | default "false" | quote }}
+  TRACER_ENABLE_REDIS: {{ $opentracing.enableRedis | default "false" | quote }}
+  ZIPKIN_ENDPOINT_URL: {{ $opentracing.endpointUrl | default "" | quote }}
+  ZIPKIN_TIMEOUT: {{ $opentracing.timeout | default "1" | quote }}
+kind: ConfigMap
+metadata:
+  name: opentracing
+  namespace: {{ include "common.names.namespace" . | quote }}
+---

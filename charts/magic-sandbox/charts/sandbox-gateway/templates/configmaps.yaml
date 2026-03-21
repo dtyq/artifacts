@@ -1,0 +1,38 @@
+{{- $global := .Values.global | default dict }}
+{{- $agent := .Values.agent | default dict }}
+{{- $fuse := .Values.fuse | default dict }}
+{{- $s3 := .Values.s3 | default dict }}
+{{- $playwright := .Values.playwright | default dict }}
+
+{{- $agentImageRoot := $agent.image | default dict }}
+{{- $fuseImageRoot := $fuse.image | default dict }}
+{{- $playwrightImageRoot := $playwright.image | default dict }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  PORT: {{ .Values.port | default "80" | quote }}
+  APP_ENV: {{ .Values.appEnv | default "test" | quote }}
+  NAMESPACE: {{ .Values.namespace | default .Release.Namespace | quote }}
+  STORAGE_TYPE: {{ .Values.storageType | default "s3" | quote }}
+  MAGIC_GATEWAY_BASE_URL: {{ .Values.magicGatewayBaseUrl | default "http://magic-gateway" | quote }}
+
+  FUSE_EXTRA_OPTIONS: {{ $fuse.extraOptions | default "-o use_path_request_style" | quote }}
+
+  AGENT_IMAGE: {{ include "common.images.image" (dict "imageRoot" $agentImageRoot "global" .Values.global) | quote }}
+  AGENT_PORT: {{ $agent.port | default "8002" | quote }}
+  PLAYWRIGHT_IMAGE: {{ include "common.images.image" (dict "imageRoot" $playwrightImageRoot "global" .Values.global) | quote }}
+  FUSE_IMAGE: {{ include "common.images.image" (dict "imageRoot" $fuseImageRoot "global" .Values.global) | quote }}
+  # TODO: QDRANT_IMAGE is not used in the sandbox-gateway, but sandbox-gateway always check this environment variable, so we need to set it to a valid image.
+  QDRANT_IMAGE: {{ include "common.images.image" (dict "imageRoot" $agentImageRoot "global" .Values.global) | quote }}
+
+  S3_CSI_DRIVER: {{ $s3.csiDriver | default "s3.csi.k8s.io" | quote }}
+  S3_SECRET_NAME: {{ $s3.secretName | default "s3-secret" | quote }}
+  S3_SECRET_NAMESPACE: {{ $s3.secretNamespace | default .Release.Namespace | quote }}
+  S3_URL: {{ $s3.url | default "http://infra-minio.infra.svc:9000" | quote }}
+  S3_BUCKET: {{ $s3.bucket | default "magic-sandbox" | quote }}

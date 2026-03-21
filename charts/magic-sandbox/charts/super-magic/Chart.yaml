@@ -1,0 +1,14 @@
+apiVersion: v2
+name: super-magic
+description: A Helm chart for super-magic platform with gateway components
+type: application
+version: 0.0.1
+appVersion: "1.0.0"
+keywords:
+  - magic
+  - sandbox
+  - super-magic
+
+maintainers:
+  - name: "Lighthouse Engine Ops Team"
+    email: "ops@dtyq.com"
