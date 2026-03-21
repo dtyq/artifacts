@@ -1,0 +1,131 @@
+apiVersion: v1
+entries:
+  infra:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2026-03-21T09:52:36.893227343Z"
+    dependencies:
+    - condition: mysql.enabled
+      name: mysql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.3.0
+    - condition: redis.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 19.6.4
+    - condition: rabbitmq.enabled
+      name: rabbitmq
+      repository: https://charts.bitnami.com/bitnami
+      version: 14.7.0
+    - condition: minio.enabled
+      name: minio
+      repository: https://charts.bitnami.com/bitnami
+      version: 17.0.21
+    - condition: ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.13.2
+    description: Infrastructure chart for Magic
+    digest: 07092ce631b4069d788ba4d2c4e35a4896f2198c03ea09ec18c49336dad2a173
+    home: https://github.com/dtyq/magic
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: infra
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/infra-0.0.1/infra-0.0.1.tgz
+    version: 0.0.1
+  magic:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2026-03-21T09:52:37.059186753Z"
+    dependencies:
+    - name: utils
+      repository: file://../utils
+      version: 0.0.1
+    - name: magic-service
+      repository: file://./charts/magic-service
+      tags:
+      - magic
+      - magic-service
+      version: 0.0.1
+    - name: magic-web
+      repository: file://./charts/magic-web
+      tags:
+      - magic
+      - magic-web
+      version: 0.0.1
+    description: A Helm chart for magic platform with web and service components
+    digest: f87ef53ba2de5adbd48b4fc0ae8c25127fbf10ed18cf5dc16024b18249ebe2bb
+    home: https://github.com/dtyq/magic
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: magic
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/magic-0.0.1/magic-0.0.1.tgz
+    version: 0.0.1
+  magic-sandbox:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2026-03-21T09:52:37.164740227Z"
+    dependencies:
+    - name: utils
+      repository: file://../utils
+      version: 0.0.1
+    - condition: magic-gateway.enabled
+      name: magic-gateway
+      repository: file://./charts/magic-gateway
+      version: 0.0.1
+    - condition: sandbox-gateway.enabled
+      name: sandbox-gateway
+      repository: file://./charts/sandbox-gateway
+      version: 0.0.1
+    - condition: super-magic.enabled
+      name: super-magic
+      repository: file://./charts/super-magic
+      version: 0.0.1
+    description: A Helm chart for magic-sandbox platform with gateway components
+    digest: 7b1c8987b0a416103e2a392e50f9a8cb10663032ed74d0fd77ba15b284cfc9ad
+    home: https://github.com/dtyq/magic
+    keywords:
+    - magic
+    - sandbox
+    - gateway
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: magic-sandbox
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/magic-sandbox-0.0.1/magic-sandbox-0.0.1.tgz
+    version: 0.0.1
+  utils:
+  - apiVersion: v2
+    created: "2026-03-21T09:52:37.320926307Z"
+    dependencies:
+    - name: common
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 2.x.x
+    description: Shared Helm utility library for Magic charts
+    digest: 48631a0e5a68e0bdb904db06402c514eabc8cab65fb360760eaf8945ef154df6
+    home: https://github.com/dtyq/magic
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: utils
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: library
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/utils-0.0.1/utils-0.0.1.tgz
+    version: 0.0.1
+generated: "2026-03-21T09:52:37.320932298Z"
