@@ -4,6 +4,9 @@ description: Sandbox Gateway - Container orchestration and management gateway
 type: application
 version: 0.0.1
 appVersion: "0.0.20"
+home: https://github.com/dtyq/magic
+sources:
+  - https://github.com/dtyq/artifacts
 keywords:
   - sandbox
   - gateway

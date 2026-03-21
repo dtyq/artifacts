@@ -3,6 +3,9 @@ name: utils
 description: Shared Helm utility library for Magic charts
 type: library
 version: 0.0.1
+home: https://github.com/dtyq/magic
+sources:
+  - https://github.com/dtyq/artifacts
 
 dependencies:
   - name: common

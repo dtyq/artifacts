@@ -4,6 +4,9 @@ description: Magic Gateway - API gateway for AI services
 type: application
 version: 0.0.1
 appVersion: "0.0.7"
+home: https://github.com/dtyq/magic
+sources:
+  - https://github.com/dtyq/artifacts
 keywords:
   - magic
   - gateway
