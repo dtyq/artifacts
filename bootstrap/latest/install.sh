@@ -8,7 +8,10 @@ set -euo pipefail
 
 BINARY_ASSET_NAME="magicrew-cli"
 BIN_NAME="${MAGICREW_BIN_NAME:-magicrew}"
-INSTALL_DIR="${MAGICREW_CLI_INSTALL_DIR:-/usr/local/bin}"
+USER_INSTALL_DIR="${HOME}/.local/bin"
+SYSTEM_INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${MAGICREW_CLI_INSTALL_DIR:-}"
+USE_SUDO=""
 # Defaults: binaries come from GitHub Releases, configs come from gh-pages/bootstrap/latest.
 # You can pin a specific version via MAGICREW_CLI_RELEASE_TAG (for example: magicrew-cli-v0.0.1); otherwise latest is used.
 if [ -n "${MAGICREW_CLI_RELEASE_TAG:-}" ]; then
@@ -20,6 +23,35 @@ BOOTSTRAP_BASE_URL="${MAGICREW_CLI_BOOTSTRAP_BASE_URL:-https://dtyq.github.io/ar
 CONFIG_FILE="${MAGICREW_CLI_CONFIG_FILE:-${HOME}/.config/magicrew/config.yml}"
 VALUES_FILE="${MAGICREW_CLI_VALUES_FILE:-${HOME}/.config/magicrew/values.yaml}"
 
+init_colors() {
+  C_RESET=""
+  C_BOLD=""
+  C_INFO=""
+  C_STEP=""
+  C_OK=""
+  C_WARN=""
+  C_ERR=""
+  C_CHOICE=""
+  C_DIM=""
+
+  if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ]; then
+    C_RESET=$'\033[0m'
+    C_BOLD=$'\033[1m'
+    C_INFO=$'\033[36m'
+    C_STEP=$'\033[1;36m'
+    C_OK=$'\033[32m'
+    C_WARN=$'\033[33m'
+    C_ERR=$'\033[31m'
+    C_CHOICE=$'\033[35m'
+    C_DIM=$'\033[2m'
+  fi
+}
+
+print_section() { printf "\n%b[%s]%b %b%s%b\n" "${C_STEP}" "$1" "${C_RESET}" "${C_BOLD}" "$2" "${C_RESET}"; }
+print_info() { printf "%b\n" "${C_INFO}  • $*${C_RESET}"; }
+print_ok() { printf "%b\n" "${C_OK}  ✓ $*${C_RESET}"; }
+print_warn() { printf "%b\n" "${C_WARN}  ! $*${C_RESET}"; }
+print_err() { printf "%b\n" "${C_ERR}  ✗ $*${C_RESET}" >&2; }
 download_file() {
   local url="$1"
   local output="$2"
@@ -32,7 +64,7 @@ download_file() {
     fi
   elif command -v wget &>/dev/null; then
     if [ -t 2 ]; then
-      wget --show-progress -O "${output}" "${url}"
+      wget -O "${output}" "${url}"
     else
       wget -qO "${output}" "${url}"
     fi
@@ -120,83 +152,171 @@ resolve_remote_checksum() {
   return 1
 }
 
+choose_install_dir() {
+  local user_dest="${USER_INSTALL_DIR}/${BIN_NAME}"
+  local system_dest="${SYSTEM_INSTALL_DIR}/${BIN_NAME}"
+
+  if [ -n "${INSTALL_DIR}" ]; then
+    return 0
+  fi
+
+  # Reuse existing install location to avoid asking every run.
+  if [ -x "${user_dest}" ] && [ ! -x "${system_dest}" ]; then
+    INSTALL_DIR="${USER_INSTALL_DIR}"
+    return 0
+  fi
+  if [ -x "${system_dest}" ] && [ ! -x "${user_dest}" ]; then
+    INSTALL_DIR="${SYSTEM_INSTALL_DIR}"
+    return 0
+  fi
+  if [ -x "${user_dest}" ] && [ -x "${system_dest}" ]; then
+    INSTALL_DIR="${USER_INSTALL_DIR}"
+    print_warn "Detected binaries in both install directories; using ${USER_INSTALL_DIR} by default."
+    return 0
+  fi
+
+  INSTALL_DIR="${USER_INSTALL_DIR}"
+
+  if [ ! -t 1 ] || [ ! -r /dev/tty ] || [ ! -w /dev/tty ]; then
+    return 0
+  fi
+
+  print_section "SETUP" "Choose install directory for ${BIN_NAME}"
+  printf "%b\n" "${C_CHOICE}    [1] ${USER_INSTALL_DIR}${C_RESET} ${C_DIM}(recommended)${C_RESET}"
+  printf "%b\n" "${C_CHOICE}    [2] ${SYSTEM_INSTALL_DIR}${C_RESET} ${C_WARN}(requires sudo/admin permission)${C_RESET}"
+  printf "%b" "${C_INFO}    Enter choice [1/2]${C_RESET} ${C_DIM}(default: 1)${C_RESET}: " >/dev/tty
+
+  local choice
+  if IFS= read -r choice </dev/tty; then
+    case "${choice}" in
+      2)
+        INSTALL_DIR="${SYSTEM_INSTALL_DIR}"
+        ;;
+      ""|1)
+        INSTALL_DIR="${USER_INSTALL_DIR}"
+        ;;
+      *)
+        print_err "Unrecognized choice: ${choice}."
+        print_err "Please rerun and choose 1 or 2."
+        exit 1
+        ;;
+    esac
+  fi
+}
+
+ensure_install_dir_writable() {
+  if [ -d "${INSTALL_DIR}" ]; then
+    :
+  elif mkdir -p "${INSTALL_DIR}" 2>/dev/null; then
+    :
+  elif [ "${INSTALL_DIR}" = "${SYSTEM_INSTALL_DIR}" ] && command -v sudo &>/dev/null; then
+    USE_SUDO="sudo"
+    ${USE_SUDO} mkdir -p "${INSTALL_DIR}"
+  else
+    print_err "Failed to create install directory: ${INSTALL_DIR}"
+    print_err "Please set MAGICREW_CLI_INSTALL_DIR to a writable path and retry."
+    exit 1
+  fi
+
+  if [ -w "${INSTALL_DIR}" ]; then
+    USE_SUDO=""
+    return 0
+  fi
+
+  if [ "${INSTALL_DIR}" = "${SYSTEM_INSTALL_DIR}" ]; then
+    if command -v sudo &>/dev/null; then
+      USE_SUDO="sudo"
+      return 0
+    fi
+    print_err "No write permission to ${SYSTEM_INSTALL_DIR}, and sudo is not available."
+    print_err "Please choose option 1 (${USER_INSTALL_DIR}),"
+    print_err "or set MAGICREW_CLI_INSTALL_DIR to a writable directory."
+  else
+    print_err "No write permission to install directory: ${INSTALL_DIR}"
+    print_err "Please set MAGICREW_CLI_INSTALL_DIR to a writable directory and retry."
+  fi
+  exit 1
+}
+
+check_docker_preflight() {
+  if ! command -v docker &>/dev/null; then
+    print_err "Docker is not installed."
+    print_err "Please install Docker first: https://docs.docker.com/get-docker/"
+    exit 1
+  fi
+  if ! docker info &>/dev/null; then
+    print_err "Docker is not running."
+    print_err "Please start Docker and try again"
+    exit 1
+  fi
+  print_ok "Docker is installed and running."
+}
+
+check_optional_tools() {
+  if command -v kubectl &>/dev/null; then
+    print_ok "kubectl is available (optional, useful for managing the Kubernetes cluster)."
+  else
+    print_warn "kubectl is not installed (optional). Install it if you want to inspect/manage the Kubernetes cluster."
+  fi
+}
+
+detect_platform() {
+  OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  case "${OS}" in
+    linux)  OS="linux" ;;
+    darwin) OS="darwin" ;;
+    *)
+      print_err "Unsupported OS: ${OS}"
+      print_err "magicrew currently supports Linux and macOS."
+      exit 1
+      ;;
+  esac
+
+  ARCH="$(uname -m)"
+  case "${ARCH}" in
+    x86_64 | amd64) ARCH="amd64" ;;
+    arm64 | aarch64) ARCH="arm64" ;;
+    *)
+      print_err "Unsupported architecture: ${ARCH}"
+      exit 1
+      ;;
+  esac
+}
+
+init_colors
+
 # ---------------------------------------------------------------------------
 # 1. Docker preflight checks
 # ---------------------------------------------------------------------------
-echo "Checking Docker installation..."
-if ! command -v docker &>/dev/null; then
-  echo "✗ Docker is not installed" >&2
-  echo "Please install Docker first: https://docs.docker.com/get-docker/" >&2
-  exit 1
-fi
-if ! docker info &>/dev/null; then
-  echo "✗ Docker is not running" >&2
-  echo "Please start Docker and try again" >&2
-  exit 1
-fi
-echo "✓ Docker is installed and running"
-echo ""
+print_section "1/4" "Environment preflight"
+check_docker_preflight
+check_optional_tools
 
-# Detect OS
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-case "${OS}" in
-  linux)  OS="linux" ;;
-  darwin) OS="darwin" ;;
-  *)
-    echo "Unsupported OS: ${OS}" >&2
-    echo "magicrew currently supports Linux and macOS." >&2
-    exit 1
-    ;;
-esac
-
-# Detect architecture
-ARCH="$(uname -m)"
-case "${ARCH}" in
-  x86_64 | amd64) ARCH="amd64" ;;
-  arm64 | aarch64) ARCH="arm64" ;;
-  *)
-    echo "Unsupported architecture: ${ARCH}" >&2
-    exit 1
-    ;;
-esac
+detect_platform
 
 BINARY_URL="${RELEASE_BASE_URL}/${BINARY_ASSET_NAME}-${OS}-${ARCH}"
 CONFIG_URL="${BOOTSTRAP_BASE_URL}/config.yml"
 VALUES_URL="${BOOTSTRAP_BASE_URL}/values.yaml"
 
-echo "Installing magicrew (${OS}/${ARCH})..."
+print_section "2/4" "Install magicrew (${OS}/${ARCH})"
 
 # Determine install path
-if [ -w "${INSTALL_DIR}" ]; then
-  DEST="${INSTALL_DIR}/${BIN_NAME}"
-  USE_SUDO=""
-else
-  DEST="${INSTALL_DIR}/${BIN_NAME}"
-  USE_SUDO="sudo"
-fi
-
-# Fallback to ~/.local/bin if /usr/local/bin is not writable even with sudo
-if [ -z "${USE_SUDO}" ] || command -v sudo &>/dev/null; then
-  : # can install to INSTALL_DIR
-else
-  INSTALL_DIR="${HOME}/.local/bin"
-  DEST="${INSTALL_DIR}/${BIN_NAME}"
-  mkdir -p "${INSTALL_DIR}"
-  USE_SUDO=""
-fi
+choose_install_dir
+ensure_install_dir_writable
+DEST="${INSTALL_DIR}/${BIN_NAME}"
 
 TMP=""
 REMOTE_CHECKSUM_ALGO=""
 REMOTE_CHECKSUM_VALUE=""
 if [ -x "${DEST}" ]; then
-  echo "Found existing local binary: ${DEST}"
+  print_info "Found existing local binary: ${DEST}"
 else
-  echo "No local binary found at ${DEST}"
+  print_info "No local binary found at ${DEST}"
 fi
 if resolve_remote_checksum "${BINARY_URL}"; then
-  echo "Found remote ${REMOTE_CHECKSUM_ALGO} checksum for ${BINARY_ASSET_NAME}"
+  print_info "Found remote ${REMOTE_CHECKSUM_ALGO} checksum for ${BIN_NAME}"
 else
-  echo "No remote checksum file found (.sha256/.md5); will reinstall binary"
+  print_warn "No remote checksum file found (.sha256/.md5); will reinstall binary."
 fi
 
 NEED_DOWNLOAD=1
@@ -206,13 +326,13 @@ if [ -x "${DEST}" ]; then
       if [ "${LOCAL_CHECKSUM}" = "${REMOTE_CHECKSUM_VALUE}" ]; then
         NEED_DOWNLOAD=0
       else
-        echo "Existing binary checksum mismatch; will download latest binary"
+        print_warn "Existing binary checksum mismatch; downloading latest binary."
       fi
     else
-      echo "Unable to calculate local ${REMOTE_CHECKSUM_ALGO}; will download latest binary"
+      print_warn "Unable to calculate local ${REMOTE_CHECKSUM_ALGO}; downloading latest binary."
     fi
   else
-    echo "Existing binary found but checksum is unavailable; will download latest binary"
+    print_warn "Existing binary found but checksum is unavailable; downloading latest binary."
   fi
 fi
 
@@ -220,33 +340,47 @@ if [ "${NEED_DOWNLOAD}" -eq 1 ]; then
   TMP="$(mktemp)"
   trap 'rm -f "${TMP:-}"' EXIT
 
-  echo "Downloading from ${BINARY_URL} ..."
+  if [ "${USE_SUDO}" = "sudo" ]; then
+    print_warn "No write permission to ${SYSTEM_INSTALL_DIR}; using sudo to install."
+  fi
+
+  print_info "Downloading binary: ${BINARY_URL}"
   download_file "${BINARY_URL}" "${TMP}"
 
   if [ -n "${REMOTE_CHECKSUM_ALGO}" ] && [ -n "${REMOTE_CHECKSUM_VALUE}" ]; then
     if ! DOWNLOADED_CHECKSUM="$(calc_local_checksum "${REMOTE_CHECKSUM_ALGO}" "${TMP}")"; then
-      echo "Failed to calculate downloaded file ${REMOTE_CHECKSUM_ALGO}" >&2
+      print_err "Failed to calculate downloaded file ${REMOTE_CHECKSUM_ALGO}"
       exit 1
     fi
     if [ "${DOWNLOADED_CHECKSUM}" != "${REMOTE_CHECKSUM_VALUE}" ]; then
-      echo "Checksum verification failed for downloaded binary (${REMOTE_CHECKSUM_ALGO})" >&2
+      print_err "Checksum verification failed for downloaded binary (${REMOTE_CHECKSUM_ALGO})"
       exit 1
     fi
-    echo "✓ Downloaded binary ${REMOTE_CHECKSUM_ALGO} verified"
+    print_ok "Downloaded binary ${REMOTE_CHECKSUM_ALGO} verified."
   fi
 
   chmod +x "${TMP}"
   ${USE_SUDO} mv "${TMP}" "${DEST}"
-  echo "✓ magicrew installed to ${DEST}"
+  print_ok "Installed magicrew to ${DEST}."
 else
-  echo "✓ magicrew already up-to-date at ${DEST}; skipping binary download"
+  print_ok "magicrew already up-to-date at ${DEST}; skip binary download."
+fi
+
+if [ "${INSTALL_DIR}" = "${USER_INSTALL_DIR}" ]; then
+  case ":${PATH}:" in
+    *":${USER_INSTALL_DIR}:"*)
+      ;;
+    *)
+      print_warn "Add ${USER_INSTALL_DIR} to PATH if it is not already available in your shell:"
+      print_info "  export PATH=\"${USER_INSTALL_DIR}:\$PATH\""
+      ;;
+  esac
 fi
 
 # ---------------------------------------------------------------------------
 # 2. Download configuration files
 # ---------------------------------------------------------------------------
-echo ""
-echo "Downloading configuration and values..."
+print_section "3/4" "Download configuration files"
 mkdir -p "$(dirname "${CONFIG_FILE}")"
 TMP_CONFIG="$(mktemp)"
 TMP_VALUES="$(mktemp)"
@@ -257,8 +391,8 @@ download_file "${VALUES_URL}" "${TMP_VALUES}"
 
 mv "${TMP_CONFIG}" "${CONFIG_FILE}"
 mv "${TMP_VALUES}" "${VALUES_FILE}"
-echo "✓ Configuration saved to ${CONFIG_FILE}"
-echo "✓ Values saved to ${VALUES_FILE}"
+print_ok "Configuration saved to ${CONFIG_FILE}."
+print_ok "Values saved to ${VALUES_FILE}."
 
 # ---------------------------------------------------------------------------
 # 3. Run deploy with explicit config paths
@@ -269,6 +403,5 @@ echo "✓ Values saved to ${VALUES_FILE}"
 #   export HTTPS_PROXY=http://<proxy>:<port>
 #   export NO_PROXY=localhost,127.0.0.1
 # kind forwards these variables into node containers so containerd can pull control-plane images.
-echo ""
-echo "Starting deployment..."
+print_section "4/4" "Start deployment"
 "${DEST}" deploy --config "${CONFIG_FILE}" --values "${VALUES_FILE}"
