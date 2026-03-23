@@ -1,0 +1,31 @@
+magic:
+  magic-service:
+    image:
+      repository: dtyq/magic-service
+      tag: master
+  magic-web:
+    image:
+      repository: dtyq/magic-web
+      tag: master
+
+magic-sandbox:
+  magic-gateway:
+    image:
+      repository: dtyq/magic-gateway
+      tag: master
+  sandbox-gateway:
+    image:
+      repository: dtyq/sandbox-components
+      tag: master
+    agent:
+      image:
+        repository: dtyq/super-magic
+        tag: master
+    playwright:
+      image:
+        repository: dtyq/playwright-mod
+        tag: master
+    fuse:
+      image:
+        repository: dtyq/s3fs-fuse-mod
+        tag: master

@@ -1,0 +1,23 @@
+log:
+  - kind: file
+    path: stderr
+    level: debug
+    type: text
+
+deploy:
+  chartRepo:
+    url: https://dtyq.github.io/artifacts
+  charts:
+    infra:
+      version: 0.0.1
+    magic:
+      version: 0.0.1
+    magic-sandbox:
+      version: 0.0.1
+  registry:
+    name: magic-kind-registry
+    port: 5000
+    image: registry:2
+    proxy:
+      enabled: true
+      url: https://ghcr.io
