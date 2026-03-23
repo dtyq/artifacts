@@ -13,7 +13,7 @@ deploy:
     magic:
       version: 0.0.1
     magic-sandbox:
-      version: 0.0.1
+      version: 0.0.2
   registry:
     name: magic-kind-registry
     port: 5000
