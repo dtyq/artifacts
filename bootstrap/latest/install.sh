@@ -6,7 +6,8 @@ set -euo pipefail
 # Usage: curl https://<host>/install.sh | bash
 # ---------------------------------------------------------------------------
 
-BINARY_NAME="magicrew-cli"
+BINARY_ASSET_NAME="magicrew-cli"
+BIN_NAME="${MAGICREW_BIN_NAME:-magicrew}"
 INSTALL_DIR="${MAGICREW_CLI_INSTALL_DIR:-/usr/local/bin}"
 # Defaults: binaries come from GitHub Releases, configs come from gh-pages/bootstrap/latest.
 # You can pin a specific version via MAGICREW_CLI_RELEASE_TAG (for example: magicrew-cli-v0.0.1); otherwise latest is used.
@@ -159,7 +160,7 @@ case "${ARCH}" in
     ;;
 esac
 
-BINARY_URL="${RELEASE_BASE_URL}/${BINARY_NAME}-${OS}-${ARCH}"
+BINARY_URL="${RELEASE_BASE_URL}/${BINARY_ASSET_NAME}-${OS}-${ARCH}"
 CONFIG_URL="${BOOTSTRAP_BASE_URL}/config.yml"
 VALUES_URL="${BOOTSTRAP_BASE_URL}/values.yaml"
 
@@ -167,10 +168,10 @@ echo "Installing magicrew (${OS}/${ARCH})..."
 
 # Determine install path
 if [ -w "${INSTALL_DIR}" ]; then
-  DEST="${INSTALL_DIR}/${BINARY_NAME}"
+  DEST="${INSTALL_DIR}/${BIN_NAME}"
   USE_SUDO=""
 else
-  DEST="${INSTALL_DIR}/${BINARY_NAME}"
+  DEST="${INSTALL_DIR}/${BIN_NAME}"
   USE_SUDO="sudo"
 fi
 
@@ -179,7 +180,7 @@ if [ -z "${USE_SUDO}" ] || command -v sudo &>/dev/null; then
   : # can install to INSTALL_DIR
 else
   INSTALL_DIR="${HOME}/.local/bin"
-  DEST="${INSTALL_DIR}/${BINARY_NAME}"
+  DEST="${INSTALL_DIR}/${BIN_NAME}"
   mkdir -p "${INSTALL_DIR}"
   USE_SUDO=""
 fi
@@ -193,7 +194,7 @@ else
   echo "No local binary found at ${DEST}"
 fi
 if resolve_remote_checksum "${BINARY_URL}"; then
-  echo "Found remote ${REMOTE_CHECKSUM_ALGO} checksum for ${BINARY_NAME}"
+  echo "Found remote ${REMOTE_CHECKSUM_ALGO} checksum for ${BINARY_ASSET_NAME}"
 else
   echo "No remote checksum file found (.sha256/.md5); will reinstall binary"
 fi
