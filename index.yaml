@@ -74,6 +74,42 @@ entries:
   magic-sandbox:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2026-03-23T14:08:08.552850247Z"
+    dependencies:
+    - name: utils
+      repository: file://../utils
+      version: 0.0.1
+    - condition: magic-gateway.enabled
+      name: magic-gateway
+      repository: file://./charts/magic-gateway
+      version: 0.0.1
+    - condition: sandbox-gateway.enabled
+      name: sandbox-gateway
+      repository: file://./charts/sandbox-gateway
+      version: 0.0.1
+    - condition: super-magic.enabled
+      name: super-magic
+      repository: file://./charts/super-magic
+      version: 0.0.1
+    description: A Helm chart for magic-sandbox platform with gateway components
+    digest: 1eb3960432e62dd89f59f1939be0e07464039a8488cd64741ebd231b64c6f275
+    home: https://github.com/dtyq/magic
+    keywords:
+    - magic
+    - sandbox
+    - gateway
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: magic-sandbox
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/magic-sandbox-0.0.2/magic-sandbox-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2026-03-21T09:52:37.164740227Z"
     dependencies:
     - name: utils
@@ -128,4 +164,4 @@ entries:
     urls:
     - https://github.com/dtyq/artifacts/releases/download/utils-0.0.1/utils-0.0.1.tgz
     version: 0.0.1
-generated: "2026-03-21T09:52:37.320932298Z"
+generated: "2026-03-23T14:08:08.552863722Z"
