@@ -1,6 +1,6 @@
-# Magic Artifacts
+# Magicrew Artifacts
 
-Helm repository for deploying [Magic](https://github.com/dtyq/magic) on Kubernetes.
+Helm repository for deploying [Magicrew](https://github.com/dtyq/magic) on Kubernetes.
 
 ## Usage
 
@@ -33,7 +33,7 @@ Release artifacts are available in the repository release page.
 
 ## Contributing
 
-The Magic source code is available at:
+The Magicrew source code is available at:
 <https://github.com/dtyq/magic>
 
 ## License
