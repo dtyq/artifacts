@@ -46,3 +46,17 @@ sandbox-gateway:
       registry: ""
       repository: dtyq/s3fs-fuse-mod
       tag: "master"
+
+imagePrepull:
+  enabled: true
+  # waitPolicy is consumed by magicrew-cli deploy logic:
+  # - none: do not wait
+  # - scheduled: wait briefly until PodScheduled
+  # - ready: wait until pods become Ready (may take longer)
+  waitPolicy: ready
+  maxWaitSeconds: 300
+  # Rolling update knobs for repeat deploys.
+  maxUnavailable: 1
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

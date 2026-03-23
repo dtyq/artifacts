@@ -1,0 +1,81 @@
+{{- $global := .Values.global | default dict -}}
+{{- $cfg := .Values.imagePrepull | default dict -}}
+{{- $enabled := true -}}
+{{- if hasKey $cfg "enabled" -}}
+{{- $enabled = $cfg.enabled -}}
+{{- end -}}
+{{- if $enabled }}
+{{- $sandbox := (index .Values "sandbox-gateway") | default dict -}}
+{{- $agent := (index $sandbox "agent") | default dict -}}
+{{- $agentImageRoot := (index $agent "image") | default dict -}}
+{{- $playwright := (index $sandbox "playwright") | default dict -}}
+{{- $playwrightImageRoot := (index $playwright "image") | default dict -}}
+{{- $fuse := (index $sandbox "fuse") | default dict -}}
+{{- $fuseImageRoot := (index $fuse "image") | default dict -}}
+{{- $agentImage := include "common.images.image" (dict "imageRoot" $agentImageRoot "global" $global) -}}
+{{- $playwrightImage := include "common.images.image" (dict "imageRoot" $playwrightImageRoot "global" $global) -}}
+{{- $fuseImage := include "common.images.image" (dict "imageRoot" $fuseImageRoot "global" $global) -}}
+{{- $name := printf "%s-image-prepull" (include "common.names.fullname" .) -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: image-prepull
+spec:
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: image-prepull
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ $cfg.maxUnavailable | default 1 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.matchLabels" . | nindent 8 }}
+        app.kubernetes.io/component: image-prepull
+      annotations:
+        checksum/image-prepull-targets: {{ printf "%s|%s|%s" $agentImage $playwrightImage $fuseImage | sha256sum | quote }}
+    spec:
+      {{- include "common.images.pullSecrets" (dict "images" (list $agentImageRoot $playwrightImageRoot $fuseImageRoot) "global" $global) | nindent 6 }}
+      initContainers:
+        - name: prepull-super-magic
+          image: {{ $agentImage | quote }}
+          imagePullPolicy: {{ (index $agentImageRoot "pullPolicy") | default $global.imagePullPolicy | default "IfNotPresent" | quote }}
+          command: ["/bin/sh", "-c", "echo super-magic warmed"]
+        - name: prepull-playwright
+          image: {{ $playwrightImage | quote }}
+          imagePullPolicy: {{ (index $playwrightImageRoot "pullPolicy") | default $global.imagePullPolicy | default "IfNotPresent" | quote }}
+          command: ["/bin/sh", "-c", "echo playwright warmed"]
+        - name: prepull-fuse
+          image: {{ $fuseImage | quote }}
+          imagePullPolicy: {{ (index $fuseImageRoot "pullPolicy") | default $global.imagePullPolicy | default "IfNotPresent" | quote }}
+          command: ["/bin/sh", "-c", "echo fuse warmed"]
+      containers:
+        - name: hold
+          image: registry.k8s.io/pause:3.10
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
+      {{- with $cfg.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $cfg.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $cfg.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
