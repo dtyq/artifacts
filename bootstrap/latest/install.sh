@@ -22,11 +22,8 @@ fi
 BOOTSTRAP_BASE_URL="${MAGICREW_CLI_BOOTSTRAP_BASE_URL:-https://dtyq.github.io/artifacts/bootstrap/latest}"
 CONFIG_FILE="${MAGICREW_CLI_CONFIG_FILE:-${HOME}/.config/magicrew/config.yml}"
 VALUES_FILE="${MAGICREW_CLI_VALUES_FILE:-${HOME}/.config/magicrew/values.yaml}"
-PROXY_ENV_FILE="${MAGICREW_CLI_PROXY_ENV_FILE:-${HOME}/.config/magicrew/proxy.env}"
-PROXY_DOC_URL="${MAGICREW_CLI_PROXY_DOC_URL:-https://docs.docker.com/engine/daemon/proxy/}"
 HOST_PROXY_URL="${MAGICREW_CLI_HOST_PROXY_URL:-}"
 USER_LANG="${MAGICREW_CLI_LANG:-}"
-LANG_PREF_FILE="${MAGICREW_CLI_LANG_PREF_FILE:-${HOME}/.config/magicrew/lang.env}"
 
 init_colors() {
   C_RESET=""
@@ -86,42 +83,6 @@ detect_system_lang() {
   printf "%s" "${candidate}"
 }
 
-load_saved_lang_preference() {
-  local line
-  local normalized=""
-  if [ ! -f "${LANG_PREF_FILE}" ]; then
-    return 1
-  fi
-
-  while IFS= read -r line || [ -n "${line}" ]; do
-    line="$(trim_space "${line}")"
-    if [ -z "${line}" ] || [[ "${line}" == \#* ]]; then
-      continue
-    fi
-
-    normalized="$(normalize_lang "${line}")"
-    if [ -n "${normalized}" ]; then
-      printf "%s" "${normalized}"
-      return 0
-    fi
-  done < "${LANG_PREF_FILE}"
-
-  return 1
-}
-
-save_user_lang_preference() {
-  local lang="$1"
-  local dir
-  lang="$(normalize_lang "${lang}")"
-  if [ -z "${lang}" ]; then
-    return 1
-  fi
-  dir="$(dirname "${LANG_PREF_FILE}")"
-  mkdir -p "${dir}"
-  printf "%s\n" "${lang}" > "${LANG_PREF_FILE}"
-  chmod 600 "${LANG_PREF_FILE}"
-}
-
 msg() {
   local key="$1"
   case "${USER_LANG}:${key}" in
@@ -157,22 +118,8 @@ msg() {
     en:err_start_docker_hint) echo "Please start Docker and try again" ;;
     zh:err_missing_downloader) echo "未检测到 curl 或 wget，请安装其一后重试。" ;;
     en:err_missing_downloader) echo "Neither curl nor wget found. Please install one and retry." ;;
-    zh:ok_proxy_check_passed) echo "代理连通性检测通过: %s (HTTP %s)。" ;;
-    en:ok_proxy_check_passed) echo "Proxy connectivity check passed via %s (HTTP %s)." ;;
-    zh:ok_docker_network_check_passed) echo "Docker daemon 网络检测通过 (docker run --pull always alpine:latest true)。" ;;
-    en:ok_docker_network_check_passed) echo "Docker daemon network check passed (docker run --pull always alpine:latest true)." ;;
-    zh:warn_docker_network_check_timeout) echo "Docker daemon 网络检测超时（%ss）。" ;;
-    en:warn_docker_network_check_timeout) echo "Docker daemon network check timed out after %ss." ;;
-    zh:warn_docker_network_check_failed) echo "Docker daemon 网络检测失败 (docker run --pull always alpine:latest true)。" ;;
-    en:warn_docker_network_check_failed) echo "Docker daemon network check failed (docker run --pull always alpine:latest true)." ;;
-    zh:warn_docker_network_no_delete) echo "该检查不会删除本地镜像。" ;;
-    en:warn_docker_network_no_delete) echo "This check does not delete local images." ;;
-    zh:warn_docker_proxy_hint) echo "你可能需要配置 Docker daemon 代理：" ;;
-    en:warn_docker_proxy_hint) echo "You may need to configure Docker daemon proxy settings:" ;;
     zh:ok_proxy_env_detected) echo "检测到当前 shell 已设置代理环境变量。" ;;
     en:ok_proxy_env_detected) echo "Detected proxy environment variables in current shell." ;;
-    zh:ok_proxy_env_loaded) echo "已从 %s 加载代理配置。" ;;
-    en:ok_proxy_env_loaded) echo "Loaded proxy settings from %s." ;;
     zh:warn_no_proxy_no_tty) echo "未检测到代理环境变量，且当前无可交互 TTY。" ;;
     en:warn_no_proxy_no_tty) echo "No proxy env detected and interactive TTY unavailable." ;;
     zh:warn_continue_without_proxy) echo "将继续执行且不配置代理。" ;;
@@ -187,16 +134,8 @@ msg() {
     en:prompt_enter_proxy_url) echo "Enter proxy URL (example: http://host:port)" ;;
     zh:warn_proxy_empty) echo "代理 URL 不能为空。" ;;
     en:warn_proxy_empty) echo "Proxy URL cannot be empty." ;;
-    zh:warn_proxy_parse_failed) echo "无法解析代理 URL，请重试。" ;;
-    en:warn_proxy_parse_failed) echo "Cannot parse proxy URL. Please retry." ;;
-    zh:warn_proxy_probe_failed) echo "所有探测目标的代理连通性检测均失败。" ;;
-    en:warn_proxy_probe_failed) echo "Proxy connectivity check failed for all probe targets." ;;
-    zh:prompt_continue_proxy_anyway) echo "仍然使用该代理继续？" ;;
-    en:prompt_continue_proxy_anyway) echo "Continue with this proxy anyway?" ;;
     zh:ok_proxy_exported) echo "已为当前安装会话导出宿主机代理环境变量。" ;;
     en:ok_proxy_exported) echo "Host proxy environment variables exported for current installer session." ;;
-    zh:ok_proxy_saved) echo "已将代理配置保存到 %s。" ;;
-    en:ok_proxy_saved) echo "Saved proxy configuration to %s." ;;
     zh:warn_dual_binaries) echo "在两个安装目录都检测到二进制；默认使用 %s。" ;;
     en:warn_dual_binaries) echo "Detected binaries in both install directories; using %s by default." ;;
     zh:section_setup) echo "安装设置" ;;
@@ -328,12 +267,10 @@ select_user_lang_if_tty() {
     case "${choice}" in
       1|en|EN|english|English)
         USER_LANG="en"
-        save_user_lang_preference "${USER_LANG}" || true
         return 0
         ;;
       2|zh|ZH|cn|CN|chinese|Chinese|中文)
         USER_LANG="zh"
-        save_user_lang_preference "${USER_LANG}" || true
         return 0
         ;;
     esac
@@ -437,85 +374,6 @@ merge_csv_values() {
   printf "%s" "${out}"
 }
 
-parse_proxy_url() {
-  local input="$1"
-  PROXY_SCHEME=""
-  PROXY_AUTH=""
-  PROXY_HOST=""
-  PROXY_PORT=""
-  PROXY_PATH=""
-
-  if [ -z "${input}" ]; then
-    return 1
-  fi
-
-  local rest hostport tail
-  if [[ "${input}" == *"://"* ]]; then
-    PROXY_SCHEME="${input%%://*}"
-    rest="${input#*://}"
-  else
-    PROXY_SCHEME="http"
-    rest="${input}"
-  fi
-
-  if [[ "${rest}" == *@* ]]; then
-    PROXY_AUTH="${rest%%@*}"
-    rest="${rest#*@}"
-  fi
-
-  if [[ "${rest}" == */* ]]; then
-    hostport="${rest%%/*}"
-    PROXY_PATH="/${rest#*/}"
-  else
-    hostport="${rest}"
-    PROXY_PATH=""
-  fi
-
-  if [[ "${hostport}" == \[*\]* ]]; then
-    PROXY_HOST="${hostport%%]*}"
-    PROXY_HOST="${PROXY_HOST#[}"
-    tail="${hostport#*]}"
-    if [[ "${tail}" == :* ]]; then
-      PROXY_PORT="${tail#:}"
-    fi
-  else
-    if [[ "${hostport}" == *:* ]]; then
-      PROXY_HOST="${hostport%%:*}"
-      PROXY_PORT="${hostport##*:}"
-    else
-      PROXY_HOST="${hostport}"
-      PROXY_PORT=""
-    fi
-  fi
-
-  if [ -z "${PROXY_HOST}" ]; then
-    return 1
-  fi
-  return 0
-}
-
-build_proxy_url() {
-  local scheme="$1"
-  local auth="$2"
-  local host="$3"
-  local port="$4"
-  local path="$5"
-  local url=""
-  local host_rendered="${host}"
-  if [[ "${host_rendered}" == *:* ]] && [[ "${host_rendered}" != \[*\] ]]; then
-    host_rendered="[${host_rendered}]"
-  fi
-  url="${scheme}://"
-  if [ -n "${auth}" ]; then
-    url+="${auth}@"
-  fi
-  url+="${host_rendered}"
-  if [ -n "${port}" ]; then
-    url+=":${port}"
-  fi
-  url+="${path}"
-  printf "%s" "${url}"
-}
 
 has_any_proxy_env() {
   [ -n "${HTTP_PROXY:-}" ] || [ -n "${HTTPS_PROXY:-}" ] || [ -n "${ALL_PROXY:-}" ] || [ -n "${http_proxy:-}" ] || [ -n "${https_proxy:-}" ] || [ -n "${all_proxy:-}" ]
@@ -590,185 +448,13 @@ prompt_value_tty() {
   return 1
 }
 
-check_proxy_reachable() {
-  local proxy_url="$1"
-  local target code
-  local required_target="https://github.com"
-  local targets=(
-    "https://www.magicrew.ai"
-  )
-
-  # github.com is required because installer binaries are downloaded from GitHub Releases.
-  code="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 --proxy "${proxy_url}" "${required_target}" || true)"
-  if [[ "${code}" == "" || "${code}" == "000" ]]; then
-    return 1
-  fi
-  print_ok "$(printf "$(msg ok_proxy_check_passed)" "${required_target}" "${code}")"
-
-  for target in "${targets[@]}"; do
-    if [ "${target}" = "${required_target}" ]; then
-      continue
-    fi
-    code="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 --proxy "${proxy_url}" "${target}" || true)"
-    if [[ "${code}" != "" && "${code}" != "000" ]]; then
-      print_ok "$(printf "$(msg ok_proxy_check_passed)" "${target}" "${code}")"
-    fi
-  done
-  return 0
-}
-
-
-save_proxy_env_file() {
-  local host_proxy_url="$1"
-  local no_proxy_csv="$2"
-  local dir
-  dir="$(dirname "${PROXY_ENV_FILE}")"
-  mkdir -p "${dir}"
-  cat > "${PROXY_ENV_FILE}" <<EOF
-HTTP_PROXY=${host_proxy_url}
-HTTPS_PROXY=${host_proxy_url}
-ALL_PROXY=${host_proxy_url}
-NO_PROXY=${no_proxy_csv}
-http_proxy=${host_proxy_url}
-https_proxy=${host_proxy_url}
-all_proxy=${host_proxy_url}
-no_proxy=${no_proxy_csv}
-MAGICREW_CLI_HOST_PROXY_URL=${host_proxy_url}
-EOF
-  chmod 600 "${PROXY_ENV_FILE}"
-}
-
-parse_proxy_env_line() {
-  local line="$1"
-  line="$(trim_space "${line}")"
-  if [ -z "${line}" ] || [[ "${line}" == \#* ]]; then
-    return 1
-  fi
-
-  if [[ "${line}" != *=* ]]; then
-    return 1
-  fi
-
-  local key="${line%%=*}"
-  local value="${line#*=}"
-  key="$(trim_space "${key}")"
-  value="$(trim_space "${value}")"
-  case "${key}" in
-    HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|http_proxy|https_proxy|all_proxy|no_proxy|MAGICREW_CLI_HOST_PROXY_URL) ;;
-    *) return 1 ;;
-  esac
-
-  if [[ "${value}" == \"*\" ]] && [[ "${value}" == *\" ]]; then
-    value="${value#\"}"
-    value="${value%\"}"
-  elif [[ "${value}" == \'*\' ]]; then
-    value="${value#\'}"
-    value="${value%\'}"
-  fi
-
-  PROXY_ENV_KEY="${key}"
-  PROXY_ENV_VALUE="${value}"
-  return 0
-}
-
-load_proxy_env_file_if_exists() {
-  local line key value
-  local loaded=0
-  if [ ! -f "${PROXY_ENV_FILE}" ]; then
-    return 1
-  fi
-
-  while IFS= read -r line || [ -n "${line}" ]; do
-    if parse_proxy_env_line "${line}"; then
-      key="${PROXY_ENV_KEY}"
-      value="${PROXY_ENV_VALUE}"
-      export "${key}=${value}"
-      loaded=1
-    fi
-  done < "${PROXY_ENV_FILE}"
-
-  if [ "${loaded}" -eq 1 ]; then
-    if [ -n "${MAGICREW_CLI_HOST_PROXY_URL:-}" ]; then
-      HOST_PROXY_URL="${MAGICREW_CLI_HOST_PROXY_URL}"
-    else
-      HOST_PROXY_URL="$(first_non_empty "${HTTP_PROXY:-}" "${http_proxy:-}" "${HTTPS_PROXY:-}" "${https_proxy:-}" "${ALL_PROXY:-}" "${all_proxy:-}" || true)"
-    fi
-    ensure_default_no_proxy
-    return 0
-  fi
-  return 1
-}
-
-docker_proxy_smoke_test() {
-  local timeout_sec="${MAGICREW_CLI_DOCKER_SMOKE_TIMEOUT_SECONDS:-20}"
-  case "${timeout_sec}" in
-    ''|*[!0-9]*)
-      timeout_sec=20
-      ;;
-    *)
-      if [ "${timeout_sec}" -le 0 ]; then
-        timeout_sec=20
-      fi
-      ;;
-  esac
-
-  local timeout_flag
-  timeout_flag="$(mktemp)"
-  rm -f "${timeout_flag}"
-
-  docker run --rm --pull always alpine:latest true >/dev/null 2>&1 &
-  local pid="$!"
-  (
-    sleep "${timeout_sec}"
-    if kill -0 "${pid}" 2>/dev/null; then
-      printf "1" > "${timeout_flag}"
-      kill "${pid}" 2>/dev/null || true
-    fi
-  ) &
-  local watcher_pid="$!"
-
-  wait "${pid}"
-  local run_exit_code=$?
-  kill "${watcher_pid}" 2>/dev/null || true
-  wait "${watcher_pid}" 2>/dev/null || true
-
-  local timed_out=0
-  if [ -f "${timeout_flag}" ]; then
-    timed_out=1
-  fi
-  rm -f "${timeout_flag}"
-
-  if [ "${run_exit_code}" -eq 0 ]; then
-    print_ok "$(msg ok_docker_network_check_passed)"
-    return 0
-  fi
-  if [ "${timed_out}" -eq 1 ]; then
-    print_warn "$(printf "$(msg warn_docker_network_check_timeout)" "${timeout_sec}")"
-  else
-    print_warn "$(msg warn_docker_network_check_failed)"
-  fi
-  print_warn "$(msg warn_docker_network_no_delete)"
-  print_warn "$(msg warn_docker_proxy_hint)"
-  print_info "${PROXY_DOC_URL}"
-  return 1
-}
-
 setup_proxy_env_if_needed() {
   local proxy_candidate=""
-  local no_proxy_csv=""
 
   if has_any_proxy_env; then
     ensure_default_no_proxy
     HOST_PROXY_URL="$(first_non_empty "${HTTP_PROXY:-}" "${http_proxy:-}" "${HTTPS_PROXY:-}" "${https_proxy:-}" "${ALL_PROXY:-}" "${all_proxy:-}" || true)"
     print_ok "$(msg ok_proxy_env_detected)"
-    return 0
-  fi
-
-  if load_proxy_env_file_if_exists; then
-    print_ok "$(printf "$(msg ok_proxy_env_loaded)" "${PROXY_ENV_FILE}")"
-    if [ -z "${HOST_PROXY_URL}" ]; then
-      HOST_PROXY_URL="$(first_non_empty "${HTTP_PROXY:-}" "${http_proxy:-}" "${HTTPS_PROXY:-}" "${https_proxy:-}" "${ALL_PROXY:-}" "${all_proxy:-}" || true)"
-    fi
     return 0
   fi
 
@@ -791,33 +477,16 @@ setup_proxy_env_if_needed() {
       print_warn "$(msg warn_proxy_empty)"
       continue
     fi
-    if ! parse_proxy_url "${proxy_candidate}"; then
-      print_warn "$(msg warn_proxy_parse_failed)"
-      continue
+    if [[ "${proxy_candidate}" != *"://"* ]]; then
+      proxy_candidate="http://${proxy_candidate}"
     fi
-    proxy_candidate="$(build_proxy_url "${PROXY_SCHEME}" "${PROXY_AUTH}" "${PROXY_HOST}" "${PROXY_PORT}" "${PROXY_PATH}")"
     break
   done
 
-  if ! check_proxy_reachable "${proxy_candidate}"; then
-    print_warn "$(msg warn_proxy_probe_failed)"
-    if ! prompt_yes_no_tty "$(msg prompt_continue_proxy_anyway)" "y"; then
-      print_warn "$(msg warn_proxy_skipped)"
-      return 0
-    fi
-  fi
-
-  no_proxy_csv="$(merge_csv_values "" \
-    "localhost" "127.0.0.1" "::1" "host.docker.internal" ".internal" \
-    "10.0.0.0/8" "172.16.0.0/12" "192.168.0.0/16")"
   HOST_PROXY_URL="${proxy_candidate}"
   apply_proxy_url_with_current_no_proxy "${HOST_PROXY_URL}"
   print_ok "$(msg ok_proxy_exported)"
 
-  no_proxy_csv="${NO_PROXY:-${no_proxy:-${no_proxy_csv}}}"
-
-  save_proxy_env_file "${HOST_PROXY_URL}" "${no_proxy_csv}"
-  print_ok "$(printf "$(msg ok_proxy_saved)" "${PROXY_ENV_FILE}")"
 }
 
 parse_checksum_file() {
@@ -1071,21 +740,11 @@ detect_platform() {
 
 init_colors
 
-LANG_SOURCE=""
 USER_LANG="$(normalize_lang "${USER_LANG}")"
 if [ -z "${USER_LANG}" ]; then
-  USER_LANG="$(load_saved_lang_preference || true)"
-  if [ -n "${USER_LANG}" ]; then
-    LANG_SOURCE="saved"
-  fi
-else
-  LANG_SOURCE="env"
-fi
-if [ -z "${USER_LANG}" ]; then
   USER_LANG="$(detect_system_lang)"
-  LANG_SOURCE="detected"
 fi
-if [ "${LANG_SOURCE}" = "detected" ]; then
+if [ -z "${MAGICREW_CLI_LANG:-}" ]; then
   select_user_lang_if_tty "${USER_LANG}" || true
 fi
 
@@ -1100,11 +759,10 @@ check_docker_preflight
 check_optional_tools
 
 # ---------------------------------------------------------------------------
-# 2. Proxy setup and docker daemon network check
+# 2. Proxy setup
 # ---------------------------------------------------------------------------
 print_section "2/5" "$(msg section_proxy_setup)"
 setup_proxy_env_if_needed
-docker_proxy_smoke_test || true
 
 BINARY_URL="${RELEASE_BASE_URL}/${BINARY_ASSET_NAME}-${OS}-${ARCH}"
 CONFIG_URL="${BOOTSTRAP_BASE_URL}/config.yml"
