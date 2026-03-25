@@ -116,6 +116,36 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      {{- $dic := .Values.daemonInitContainer | default dict }}
+      {{- if not (eq (toString ($dic.enabled | default true)) "false") }}
+      initContainers:
+      - name: wait-for-web
+        image: {{ include "common.images.image" (dict "imageRoot" ($dic.image | default dict) "global" .Values.global "chart" .Chart) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | default $global.imagePullPolicy | default "Always" | quote }}
+        command:
+        - sh
+        - -c
+        - |
+          {{- $timeout := $dic.timeoutSeconds | default 300 | int -}}
+          {{- $period := $dic.periodSeconds | default 5 | int -}}
+          {{- $maxRetries := max 1 (div $timeout $period) }}
+          MAX={{ $maxRetries }}
+          INTERVAL={{ $period }}
+          URL="http://{{ include "common.names.name" . }}.{{ include "common.names.namespace" . }}:9501/heartbeat"
+          i=0
+          echo "Waiting for $URL (max ${MAX} retries, interval ${INTERVAL}s)..."
+          while [ $i -lt $MAX ]; do
+            if wget -q -O /dev/null "$URL" 2>/dev/null; then
+              echo "Web service is ready after $((i * INTERVAL))s"
+              exit 0
+            fi
+            i=$((i + 1))
+            echo "  attempt $i/$MAX failed, retrying in ${INTERVAL}s..."
+            sleep $INTERVAL
+          done
+          echo "Timeout: web service not ready after $((MAX * INTERVAL))s, starting daemon anyway"
+          exit 0
+      {{- end }}
       containers:
       - env:
         - name: CRONTAB_ENABLE
