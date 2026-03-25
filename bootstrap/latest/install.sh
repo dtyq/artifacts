@@ -279,6 +279,12 @@ msg() {
     en:ok_config_saved) echo "Configuration saved to %s." ;;
     zh:ok_values_saved) echo "Values 文件已保存到 %s。" ;;
     en:ok_values_saved) echo "Values saved to %s." ;;
+    zh:err_download_binary_failed) echo "下载二进制失败: %s" ;;
+    en:err_download_binary_failed) echo "Failed to download binary: %s" ;;
+    zh:err_download_config_failed) echo "下载配置文件失败: %s" ;;
+    en:err_download_config_failed) echo "Failed to download config file: %s" ;;
+    zh:err_download_values_failed) echo "下载 values 文件失败: %s" ;;
+    en:err_download_values_failed) echo "Failed to download values file: %s" ;;
     *)
       # Fallback to key to avoid hard failure on missing translations.
       echo "${key}"
@@ -338,19 +344,19 @@ select_user_lang_if_tty() {
 download_file() {
   local url="$1"
   local output="$2"
-  local proxy_arg=()
-
-  # Prefer explicit proxy for downloader to avoid environment propagation ambiguity.
-  if [ -n "${HOST_PROXY_URL:-}" ]; then
-    proxy_arg=(--proxy "${HOST_PROXY_URL}")
-  fi
 
   if command -v curl &>/dev/null; then
+    local -a curl_cmd=(curl)
     if [ -t 2 ]; then
-      curl -fL --progress-bar "${proxy_arg[@]}" "${url}" -o "${output}"
+      curl_cmd+=(-fL --show-error --progress-bar)
     else
-      curl -fsSL "${proxy_arg[@]}" "${url}" -o "${output}"
+      curl_cmd+=(-fsSL --show-error)
     fi
+    if [ -n "${HOST_PROXY_URL:-}" ]; then
+      curl_cmd+=(--proxy "${HOST_PROXY_URL}")
+    fi
+    curl_cmd+=("${url}" -o "${output}")
+    "${curl_cmd[@]}"
   elif command -v wget &>/dev/null; then
     if [ -t 2 ]; then
       wget -O "${output}" "${url}"
@@ -359,8 +365,16 @@ download_file() {
     fi
   else
     echo "$(msg err_missing_downloader)" >&2
-    exit 1
+    return 1
   fi
+}
+
+try_download_file() {
+  local url="$1"
+  local output="$2"
+
+  # Isolate optional download failures from global errexit in parent shell.
+  (set +e; download_file "${url}" "${output}")
 }
 
 first_non_empty() {
@@ -870,7 +884,7 @@ resolve_remote_checksum() {
       checksum_url="${binary_url}.md5"
     fi
 
-    if download_file "${checksum_url}" "${checksum_tmp}" >/dev/null 2>&1; then
+    if try_download_file "${checksum_url}" "${checksum_tmp}" >/dev/null 2>&1; then
       if checksum="$(parse_checksum_file "${checksum_tmp}" "${expected_len}")"; then
         REMOTE_CHECKSUM_ALGO="${algo}"
         REMOTE_CHECKSUM_VALUE="${checksum}"
@@ -1144,7 +1158,10 @@ if [ "${NEED_DOWNLOAD}" -eq 1 ]; then
   fi
 
   print_info "$(printf "$(msg info_downloading_binary)" "${BINARY_URL}")"
-  download_file "${BINARY_URL}" "${TMP}"
+  if ! download_file "${BINARY_URL}" "${TMP}"; then
+    print_err "$(printf "$(msg err_download_binary_failed)" "${BINARY_URL}")"
+    exit 1
+  fi
 
   if [ -n "${REMOTE_CHECKSUM_ALGO}" ] && [ -n "${REMOTE_CHECKSUM_VALUE}" ]; then
     if ! DOWNLOADED_CHECKSUM="$(calc_local_checksum "${REMOTE_CHECKSUM_ALGO}" "${TMP}")"; then
@@ -1186,8 +1203,14 @@ TMP_CONFIG="$(mktemp)"
 TMP_VALUES="$(mktemp)"
 trap 'rm -f "${TMP:-}" "${TMP_CONFIG:-}" "${TMP_VALUES:-}"' EXIT
 
-download_file "${CONFIG_URL}" "${TMP_CONFIG}"
-download_file "${VALUES_URL}" "${TMP_VALUES}"
+if ! download_file "${CONFIG_URL}" "${TMP_CONFIG}"; then
+  print_err "$(printf "$(msg err_download_config_failed)" "${CONFIG_URL}")"
+  exit 1
+fi
+if ! download_file "${VALUES_URL}" "${TMP_VALUES}"; then
+  print_err "$(printf "$(msg err_download_values_failed)" "${VALUES_URL}")"
+  exit 1
+fi
 
 mv "${TMP_CONFIG}" "${CONFIG_FILE}"
 mv "${TMP_VALUES}" "${VALUES_FILE}"
