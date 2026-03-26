@@ -195,10 +195,6 @@ fileDriver:
 # Polls the web service /heartbeat until ready before allowing daemon to start.
 daemonInitContainer:
   enabled: true
-  image:
-    registry: ""
-    repository: busybox
-    tag: "1.37"
   # Maximum seconds to wait for the web service to become healthy
   timeoutSeconds: 300
   # Interval in seconds between health check attempts

@@ -120,7 +120,7 @@ spec:
       {{- if not (eq (toString ($dic.enabled | default true)) "false") }}
       initContainers:
       - name: wait-for-web
-        image: {{ include "common.images.image" (dict "imageRoot" ($dic.image | default dict) "global" .Values.global "chart" .Chart) }}
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global "chart" .Chart) }}
         imagePullPolicy: {{ .Values.image.pullPolicy | default $global.imagePullPolicy | default "Always" | quote }}
         command:
         - sh
