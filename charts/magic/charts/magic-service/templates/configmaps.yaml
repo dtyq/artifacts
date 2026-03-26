@@ -68,21 +68,15 @@ data:
   FILE_MINIO_REGION: {{ .region | default "us-east-1" | quote }}
   FILE_MINIO_STS_ENDPOINT: {{ .stsEndpoint | default "" | quote }}
   {{- with .private | default dict }}
-  FILE_PRIVATE_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
-  FILE_PRIVATE_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
   FILE_PRIVATE_MINIO_BUCKET: {{ .bucket | default "" | quote }}
   FILE_PRIVATE_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
   {{- end }}
   {{- with .public | default dict }}
-  FILE_PUBLIC_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
-  FILE_PUBLIC_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
   FILE_PUBLIC_MINIO_BUCKET: {{ .bucket | default "" | quote }}
   FILE_PUBLIC_MINIO_PUBLIC_READ: {{ .publicRead | default "true" | quote }}
   FILE_PUBLIC_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
   {{- end }}
   {{- with .sandbox | default dict }}
-  FILE_SANDBOX_MINIO_ACCESS_KEY: {{ .accessKey | default "" | quote }}
-  FILE_SANDBOX_MINIO_SECRET_KEY: {{ .secretKey | default "" | quote }}
   FILE_SANDBOX_MINIO_BUCKET: {{ .bucket | default "" | quote }}
   FILE_SANDBOX_MINIO_ROLE_ARN: {{ .roleArn | default (printf "arn:aws:s3:::%s" .bucket) | quote }}
   {{- end }}
