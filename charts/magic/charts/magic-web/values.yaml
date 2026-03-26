@@ -13,11 +13,6 @@ proxy:
   socketBasePath: "/_/magic-service"
   webBaseURL: "http://localhost:38080"
 
-url:
-  serviceBaseUrl: ""
-  socketBaseUrl: ""
-  webBaseUrl: ""
-
 image:
   registry: ""
   repository: dtyq/magic-web

@@ -1,6 +1,7 @@
 apiVersion: v1
-{{- $url := .Values.url | default dict }}
 {{- $proxy := .Values.proxy | default dict }}
+{{- $webBaseUrl := (index $proxy "webBaseURL") | default "http://localhost:38080" | trimSuffix "/" }}
+{{- $wsBaseUrl := regexReplaceAll "^http(s?)://" $webBaseUrl "ws${1}://" }}
 data:
   PORT: {{ .Values.port | default "8080" | quote }}
   TIMEZONE: {{ .Values.timezone | default "Asia/Shanghai" | quote }}
@@ -11,9 +12,9 @@ data:
   MAGIC_ICP_CODE: {{ .Values.icpCode | default "" | quote }}
   MAGIC_IS_PRIVATE_DEPLOY: {{ .Values.isPrivateDeploy | default "true" | quote }}
   MAGIC_LOGIN_CONFIG: {{ .Values.loginConfig | toJson | default "{}" | quote }}
-  MAGIC_SERVICE_BASE_URL: {{ (index $url "serviceBaseUrl") | default (index $proxy "apiBasePath") | default "/_/magic-service" | quote }}
-  MAGIC_SOCKET_BASE_URL: {{ (index $url "socketBaseUrl") | default (index $proxy "socketBasePath") | default "/_/magic-service" | quote }}
-  MAGIC_WEB_URL: {{ (index $url "webBaseUrl") | default (index $proxy "webBaseURL") | default "http://localhost:38080" | quote }}
+  MAGIC_SERVICE_BASE_URL: {{ printf "%s%s" $webBaseUrl ((index $proxy "apiBasePath") | default "/_/magic-service") | quote }}
+  MAGIC_SOCKET_BASE_URL: {{ printf "%s%s" $wsBaseUrl ((index $proxy "socketBasePath") | default "/_/magic-service") | quote }}
+  MAGIC_WEB_URL: {{ $webBaseUrl | quote }}
   MAGIC_PUBLIC_CDN_URL: {{ .Values.publicCdnUrl | default "" | quote }}
 kind: ConfigMap
 metadata:
