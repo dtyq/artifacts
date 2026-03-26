@@ -41,6 +41,38 @@ entries:
   magic:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2026-03-26T10:10:15.935159915Z"
+    dependencies:
+    - name: utils
+      repository: file://../utils
+      version: 0.0.1
+    - name: magic-service
+      repository: file://./charts/magic-service
+      tags:
+      - magic
+      - magic-service
+      version: 0.0.3
+    - name: magic-web
+      repository: file://./charts/magic-web
+      tags:
+      - magic
+      - magic-web
+      version: 0.0.2
+    description: A Helm chart for magic platform with web and service components
+    digest: d376dd955f78ff11e7f2ce027ff6f049745521146f543ad2f3ee6a8250d3e5be
+    home: https://github.com/dtyq/magic
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: magic
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/magic-0.0.3/magic-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2026-03-26T07:26:02.575060563Z"
     dependencies:
     - name: utils
@@ -196,4 +228,4 @@ entries:
     urls:
     - https://github.com/dtyq/artifacts/releases/download/utils-0.0.1/utils-0.0.1.tgz
     version: 0.0.1
-generated: "2026-03-26T07:26:02.575073352Z"
+generated: "2026-03-26T10:10:15.935179261Z"
