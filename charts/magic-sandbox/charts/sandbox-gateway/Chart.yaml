@@ -2,7 +2,7 @@ apiVersion: v2
 name: sandbox-gateway
 description: Sandbox Gateway - Container orchestration and management gateway
 type: application
-version: 0.0.1
+version: 0.0.2
 appVersion: "0.0.20"
 home: https://github.com/dtyq/magic
 sources:

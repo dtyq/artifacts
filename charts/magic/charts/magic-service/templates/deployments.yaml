@@ -23,10 +23,12 @@ spec:
     metadata:
       labels:
         {{- include "magic-service.selectorLabels" . | nindent 8 }}
-      {{- with (.Values.podAnnotations | default .Values.global.podAnnotations) }}
       annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- with (.Values.podAnnotations | default .Values.global.podAnnotations) }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       containers:
       - env:
@@ -111,10 +113,12 @@ spec:
     metadata:
       labels:
         {{- include "magic-service.daemonSelectorLabels" . | nindent 8 }}
-      {{- with (.Values.podAnnotations | default .Values.global.podAnnotations) }}
       annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- with (.Values.podAnnotations | default .Values.global.podAnnotations) }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- $dic := .Values.daemonInitContainer | default dict }}
       {{- if not (eq (toString ($dic.enabled | default true)) "false") }}

@@ -2,7 +2,7 @@ apiVersion: v2
 name: magic-sandbox
 description: A Helm chart for magic-sandbox platform with gateway components
 type: application
-version: 0.0.2
+version: 0.0.3
 appVersion: "0.0.1"
 home: https://github.com/dtyq/magic
 sources:
@@ -17,11 +17,11 @@ dependencies:
     version: "0.0.1"
     repository: "file://../utils"
   - name: magic-gateway
-    version: 0.0.1
+    version: 0.0.2
     repository: "file://./charts/magic-gateway"
     condition: magic-gateway.enabled
   - name: sandbox-gateway
-    version: 0.0.1
+    version: 0.0.2
     repository: "file://./charts/sandbox-gateway"
     condition: sandbox-gateway.enabled
   - name: super-magic
