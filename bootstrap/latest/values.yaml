@@ -2,8 +2,8 @@ magic:
   magic-service:
     image:
       repository: dtyq/magic-service
-      tag: f5e3534c9982f88661b42b509ccd129385f1df37
-      digest: sha256:b24b1a361f314c1965afebb3dc51d327e47a8c4ade84c4eef6dbd05c8121164d
+      tag: 9e1c85465758e8ba0a2009d72df09cc2fb1aa900
+      digest: sha256:e7b2933c1895bc8da7d6fd9200976e2331000778270cf954ee8402b961f0b1b5
   magic-web:
     image:
       repository: dtyq/magic-web
