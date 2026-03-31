@@ -81,28 +81,6 @@ minio:
   provisioning:
     enabled: true
 
-    policies:
-      - name: full-access-policy
-        statements:
-          - resources:
-              - "arn:aws:s3:::magic"
-              - "arn:aws:s3:::magic/*"
-              - "arn:aws:s3:::magic-public"
-              - "arn:aws:s3:::magic-public/*"
-              - "arn:aws:s3:::magic-sandbox"
-              - "arn:aws:s3:::magic-sandbox/*"
-            effect: "Allow"
-            actions:
-              - "s3:*"
-      - name: magic-sandbox-access-policy
-        statements:
-          - resources:
-              - "arn:aws:s3:::magic-sandbox"
-              - "arn:aws:s3:::magic-sandbox/*"
-            effect: "Allow"
-            actions:
-              - "s3:*"
-
   console:
     enabled: false
   defaultInitContainers:

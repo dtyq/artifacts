@@ -53,6 +53,22 @@ minio:
           app: {{ index .Tags "app" | quote }}
           type: {{ index .Tags "type" | quote }}
       {{- end }}
+    policies:
+      {{- range .MinIO.Policies }}
+      - name: {{ .Name | quote }}
+        statements:
+          {{- range .Statements }}
+          - resources:
+              {{- range .Resources }}
+              - {{ . | quote }}
+              {{- end }}
+            effect: {{ .Effect | quote }}
+            actions:
+              {{- range .Actions }}
+              - {{ . | quote }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
     extraCommands:
       {{- range .MinIO.Buckets }}
       {{- if eq (index .Tags "type") "public" }}
