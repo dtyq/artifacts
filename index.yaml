@@ -3,6 +3,43 @@ entries:
   infra:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2026-03-31T06:43:41.146565945Z"
+    dependencies:
+    - condition: mysql.enabled
+      name: mysql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.3.0
+    - condition: redis.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 19.6.4
+    - condition: rabbitmq.enabled
+      name: rabbitmq
+      repository: https://charts.bitnami.com/bitnami
+      version: 14.7.0
+    - condition: minio.enabled
+      name: minio
+      repository: https://charts.bitnami.com/bitnami
+      version: 17.0.21
+    - condition: ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.13.2
+    description: Infrastructure chart for Magic
+    digest: 3ee2e9da50bdf4a7992b3f392af5abacfeca2dadf69831e2b5d53f720928d87b
+    home: https://github.com/dtyq/magic
+    maintainers:
+    - email: ops@dtyq.com
+      name: Lighthouse Engine Ops Team
+    name: infra
+    sources:
+    - https://github.com/dtyq/artifacts
+    type: application
+    urls:
+    - https://github.com/dtyq/artifacts/releases/download/infra-0.0.2/infra-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2026-03-21T09:52:36.893227343Z"
     dependencies:
     - condition: mysql.enabled
@@ -296,4 +333,4 @@ entries:
     urls:
     - https://github.com/dtyq/artifacts/releases/download/utils-0.0.1/utils-0.0.1.tgz
     version: 0.0.1
-generated: "2026-03-26T10:50:29.333189824Z"
+generated: "2026-03-31T06:43:41.146589831Z"
