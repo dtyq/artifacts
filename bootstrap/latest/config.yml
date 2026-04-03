@@ -9,7 +9,7 @@ deploy:
     url: https://dtyq.github.io/artifacts
   charts:
     infra:
-      version: 0.0.1
+      version: 0.0.2
     magic:
       version: 0.0.4
     magic-sandbox:

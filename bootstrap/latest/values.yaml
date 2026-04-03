@@ -2,38 +2,37 @@ magic:
   magic-service:
     image:
       repository: dtyq/magic-service
-      tag: 9e1c85465758e8ba0a2009d72df09cc2fb1aa900
-      digest: sha256:e7b2933c1895bc8da7d6fd9200976e2331000778270cf954ee8402b961f0b1b5
+      tag: master
+      digest: sha256:a5dbd0726d067adc461b557449546c7d565a2e3edce8dbd09eca1cc4726d6c4b
   magic-web:
     image:
       repository: dtyq/magic-web
-      tag: 8c9833224db992d531a8e07c46151e230f1e00f7
+      tag: master
       digest: sha256:6ff2ddc213bafca40f6c078a9fe8ceb256b4640eaa78452e9af51630c8590033
 
 magic-sandbox:
   magic-gateway:
     image:
       repository: dtyq/magic-gateway
-      tag: 7eb188cbc11662dff4884ace84b2010f5b09c6a3
+      tag: master
       digest: sha256:de70958f1e2dc9b1c93e9fff0ad5422c5b7e4800e95567e5995925e6eda401ec
   sandbox-gateway:
     image:
       repository: dtyq/sandbox-components
-      tag: 7eb188cbc11662dff4884ace84b2010f5b09c6a3
+      tag: master
       digest: sha256:eeef4e6e48abc7c36b1efc8d1722c2412d5d348d2d36d5b01a5cba38d4c8f596
     agent:
       image:
         repository: dtyq/super-magic
-        tag: 83e2a7c6c161d0e27eece083a12574d6807cc45e
-        digest: sha256:d1ccf75cfddd9b0b730f6f8fb9229b976cebb429c84503593cd4d9e5c9a90c73
+        tag: master
+        digest: sha256:55014c015c4bf79ec2a0a0bc8bd1dbbd6b32ccd6e8bf99f6dc93e43cce8ea19a
     playwright:
       image:
         repository: dtyq/playwright-mod
-        tag: 7eb188cbc11662dff4884ace84b2010f5b09c6a3
+        tag: master
         digest: sha256:c68c73cad049181759bca48908f5afae24665bfe7a63c768fa523f0ee3e6ff97
     fuse:
       image:
         repository: dtyq/s3fs-fuse-mod
-        tag: 35196ff1121ce73f77fe2a30ca4778f658beeac8
+        tag: master
         digest: sha256:bda22158fbb7bb437d7e34f1a82e4251298a42c2d9e04ac36f1f17225c941b75
-
